@@ -1,1 +1,486 @@
-placeholder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.6;
+        }
+        .publication-title {
+            font-family: 'DM Serif Display', serif;
+            font-weight: 400;
+            font-size: 2.3rem !important;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+        .author-block {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+        }
+        .content-block {
+            max-width: 800px;
+        }
+        .abstract {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        .teaser .hero-body {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        .teaser {
+            font-family: 'DM Sans', sans-serif;
+        }
+        .teaser img {
+            max-height: 500px;
+            width: auto;
+            margin: 0 auto 2rem;
+            display: block;
+        }
+        .publication-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .link-block {
+            flex: 0 0 auto;
+        }
+        .content {
+            font-family: 'DM Sans', sans-serif;
+        }
+        .navbar, .footer {
+            font-family: 'DM Sans', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'DM Serif Display', serif;
+            font-weight: 400;
+        }
+        .example-images {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .example-column {
+            width: 24%;
+            margin-bottom: 1rem;
+        }
+        .example-column img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+        
+        @media screen and (max-width: 768px) {
+            .example-column {
+                width: 48%;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .example-column {
+                width: 100%;
+            }
+        }
+        .limited-width-image {
+            max-width: 400px;
+            margin: 0 auto;
+            display: block;
+        }
+        .tabs.is-boxed a {
+            padding: 0.75rem 1.5rem;
+        }
+        .tabs .icon {
+            margin-right: 0.5rem;
+        }
+        .tab-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        @media screen and (max-width: 768px) {
+            .publication-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            .link-block {
+                width: 100%;
+                max-width: 200px;
+            }
+            .link-block .button {
+                width: 100%;
+            }
+        }
+        
+        .dataTables_wrapper {
+            overflow-x: auto;
+        }
+        
+        table.dataTable {
+            width: 100% !important;
+        }
+        
+        .dataTables_scrollBody {
+            overflow-x: hidden !important;
+            width: 100% !important;
+        }
+
+        @media screen and (max-width: 768px) {
+            .tabs ul {
+                flex-wrap: wrap;
+            }
+            .tabs li {
+                flex-basis: 100%;
+            }
+            .tabs.is-boxed a {
+                border-radius: 0;
+                margin-bottom: 1px;
+            }
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            min-width: 600px;
+            table-layout: fixed;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.5rem;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .table th:nth-child(1),
+        .table td:nth-child(1) {
+            width: 25%;
+        }
+        .table th:nth-child(2),
+        .table td:nth-child(2) {
+            width: 20%;
+        }
+        .table th:nth-child(3),
+        .table td:nth-child(3) {
+            width: 25%;
+        }
+        .table th:nth-child(4),
+        .table td:nth-child(4) {
+            width: 20%;
+        }
+        .table th:nth-child(5),
+        .table td:nth-child(5) {
+            width: 10%;
+        }
+
+        @media screen and (max-width: 768px) {
+            .table th,
+            .table td {
+                font-size: 0.9rem;
+                padding: 0.4rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .table th,
+            .table td {
+                font-size: 0.8rem;
+                padding: 0.3rem;
+            }
+        }
+
+        .publication-links .button {
+            background: linear-gradient(to right, #292524, #44403c);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 2.8em;
+            padding: 0 1.5em;
+            border-radius: 8px !important;
+        }
+
+        @media screen and (max-width: 768px) {
+            .publication-links .button {
+                border-radius: 6px !important;
+            }
+        }
+
+        .publication-links .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background: linear-gradient(to right, #44403c, #292524);
+        }
+
+        h2.title {
+            font-family: 'DM Serif Display', serif;
+            font-weight: 400;
+            line-height: 1.3;
+            margin-bottom: 1.2rem;
+        }
+
+        .content p {
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.7;
+        }
+
+        .section {
+            padding: 3rem 1.5rem;
+        }
+
+        .system-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: #2563eb;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+    </style>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox-plus-jquery.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="https://zaidkhan.me/">
+            <span class="icon">
+                <i class="fas fa-home"></i>
+            </span>
+        </a>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-body">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered">
+                <div class="column has-text-centered">
+                    <h1 class="title is-1 publication-title"><span class="system-name">MutaGReP</span>: Execution-Free Repository-Grounded Plan Search for Code-Use</h1>
+                    <div class="is-size-5 publication-authors">
+                        <span class="author-block">
+                            <a href="https://zaidkhan.me/">Zaid Khan</a><sup>1</sup>,
+                        </span>
+                        <span class="author-block">
+                            <a href="https://homes.cs.washington.edu/~ali/">Ali Farhadi</a><sup>2</sup>,
+                        </span>
+                        <span class="author-block">
+                            <a href="https://www.ranjaykrishna.com/index.html">Ranjay Krishna</a><sup>2</sup>,
+                        </span>
+                        <span class="author-block">
+                            <a href="https://lucaweihs.github.io/">Luca Weihs</a><sup>3</sup>,
+                        </span>
+                        <span class="author-block">
+                            <a href="https://www.cs.unc.edu/~mbansal/">Mohit Bansal</a><sup>1</sup>,
+                        </span>
+                        <span class="author-block">
+                            <a href="https://tanmaygupta.info/">Tanmay Gupta</a><sup>2</sup>
+                        </span>
+                    </div>
+
+                    <div class="is-size-5 publication-authors">
+                        <span class="author-block"><sup>1</sup>University of North Carolina, Chapel Hill</span>
+                        <span class="author-block"><sup>2</sup>Allen Institute for Artificial Intelligence (AI2)</span>
+                        <span class="author-block"><sup>3</sup>Vercept AI</span>
+                    </div>
+
+                    <div class="is-size-5 publication-authors" style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap;">
+                            <img src="static/images/UNC-NLP_logo.png" alt="UNC NLP Logo" style="height: 60px; width: auto;">
+                            <img src="static/images/ai2_logo.png" alt="AI2 Logo" style="height: 45px; width: auto;">
+                            <img src="static/images/Vercept_logo.svg" alt="Vercept Logo" style="height: 30px; width: auto;">
+                        </div>
+                    </div>
+
+                    <div class="column has-text-centered">
+                        <div class="publication-links">
+                            <span class="link-block">
+                                <a href="https://arxiv.org/abs/2410.06215" class="external-link button is-normal is-dark">
+                                    <span class="icon">
+                                        <i class="ai ai-arxiv"></i>
+                                    </span>
+                                    <span>arXiv</span>
+                                </a>
+                            </span>
+                            <span class="link-block">
+                                <a href="https://github.com/codezakh/MutaGReP" class="external-link button is-normal is-rounded is-dark">
+                                    <span class="icon">
+                                        <i class="fab fa-github"></i>
+                                    </span>
+                                    <span>Code</span>
+                                </a>
+                            </span>
+                            <span class="link-block">
+                                <a href="https://huggingface.co/collections/codezakh/dataenvgym-6706a1c3aa0dff87a2309e30" class="external-link button is-normal is-rounded is-dark">
+                                    <span>🤗 HuggingFace</span>
+                                </a>
+                            </span>
+                            <span class="link-block">
+                                <button class="button is-normal is-rounded is-dark" id="copy-citation">
+                                    <span class="icon">
+                                        <i class="fas fa-copy"></i>
+                                    </span>
+                                    <span>BibTeX</span>
+                                </button>
+                            </span>
+                            <span class="link-block">
+                                <a href="https://x.com/codezakh/status/1844064267999531151" class="external-link button is-normal is-rounded is-dark">
+                                    <span>🧵 Thread </span>
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="hero teaser">
+    <div class="container is-max-desktop">
+        <div class="hero-body">
+            <img src="static/images/teaser.png" alt="MutaGReP Overview">
+            <div class="subtitle has-text-left" style="font-family: 'DM Sans', sans-serif;">
+                <strong><span class="system-name">MutaGReP</span> Overview</strong>: Given a user request that requires writing code against a specific codebase, <span class="system-name">MutaGReP</span> searches for realizable plans to solve the user's request using LLM-guided tree search. The search procedure explores viable solutions by mutating plans while constraining them to symbols available in the codebase. The user request and detailed plan serve as an enriched query that provides <strong>necessary structured repo context</strong> to downstream coding systems, improving repo-level code generation performance.
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container is-max-desktop content-block">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified abstract">
+            <p>
+                When a human requests an LLM to complete a coding task using functionality from a large code repository, how do we provide context from the repo to the LLM?
+            </p>
+            <p>
+                One approach is to add the entire repo to the LLM's context window. However, most tasks involve only a fraction of symbols from a repo, longer contexts are detrimental to the LLM's reasoning ability, and context windows are not unlimited. Alternatively, we could emulate the human ability to navigate a large repo, pick out the right functionality, and form a plan to solve the task.
+            </p>
+            <p>
+                We propose <span class="system-name">MutaGReP</span> (<em>Mutation-Guided Grounded Repository Plan Search</em>), an approach to search for plans that decompose a user request into natural language steps grounded in the codebase. <span class="system-name">MutaGReP</span> performs neural tree search in plan space, exploring by mutating plans and using a symbol retriever for grounding. On the challenging <strong>LongCodeArena</strong> benchmark, our plans use less than 5% of a 128K context window for GPT-4o but rival the coding performance of GPT-4o with a context window filled with the repository. Plans produced by <span class="system-name">MutaGReP</span> allow <strong>Qwen 2.5 Coder 32B and 72B</strong> to match the performance of GPT-4o with full repo context and enable progress on the <strong>hardest LongCodeArena tasks</strong>.
+            </p>
+        </div>
+
+        <h2 class="title is-3">Plan Search</h2>
+        <div class="content">
+            <img src="static/images/traversal-and-ranking.png" alt="MutaGReP Plan Search Process" class="limited-width-image">
+            <p>
+                Each node in the tree is a repo-grounded plan. At every time step, a node is chosen for growing the tree and successors are created by mutating the chosen plan. We use an LLM to implement the successor function.
+            </p>
+        </div>
+
+        <h2 class="title is-3">Mutation and Grounding</h2>
+        <div class="content">
+            <img src="static/images/mutation-and-grounding.png" alt="MutaGReP Mutation and Grounding Process" class="limited-width-image">
+            <p>
+                The successor function mutates a plan (left-most column) to generate new plans (right-most column). For each modified intent, the grounding function maps the intent to symbols that might be used to implement the intent.
+            </p>
+        </div>
+
+        <h2 class="title is-3">System-Level Comparison</h2>
+        <div class="content">
+            <img src="static/images/system-level-comparison-tokens.png" alt="System Level Comparison" class="limited-width-image">
+            <p>
+                Using a fraction of the context, Plan Search (driven by <span class="system-name">MutaGReP</span>) is competitive with adding the entire codebase into the LLM context and significantly outperforms ReAct based planning.
+            </p>
+        </div>
+
+        <h2 class="title is-3">Enhancing other LLMs with Plans</h2>
+        <div class="content">
+            <img src="static/images/model_comparison.png" alt="Model Comparison" class="limited-width-image">
+            <p>
+                Plans produced by <span class="system-name">MutaGReP</span> consistently improve performance across all models. <strong>Qwen 2.5 Coder 32B</strong> with our plans exceeds GPT-4o's full-repo performance despite conditioning on 120k fewer context tokens. Even models stronger than GPT-4o (e.g., O1) benefit from our GPT-4o-generated plans.
+            </p>
+        </div>
+
+        <h2 class="title is-3">Making Progress on Hardest 10% of Tasks</h2>
+        <div class="content">
+            <img src="static/images/hard_tasks.png" alt="Performance on Hard Tasks" class="limited-width-image">
+            <p>
+                Plans found by <span class="system-name">MutaGReP</span> enable progress on hard tasks where even full-repo context performed poorly. Conditioning on plans produced by <span class="system-name">MutaGReP</span> shows gains on the <strong>hardest 10% of tasks</strong> where GPT-4o with a context window filled with the repository performs poorly: — only finding less than 20% of the symbols used in the reference code.
+            </p>
+        </div>
+
+        <h2 class="title is-3">Test-time Scaling</h2>
+        <h3 class="title is-4">Unconstrained Mutation</h3>
+        <div class="content">
+            <img src="static/images/successor_ablation.png" alt="Successor Ablation Results" class="limited-width-image">
+            <p>
+                <strong><span style="color: ForestGreen">Unconstrained</span> mutation outperforms <span style="color: Orange">monotonic</span> mutation, especially at lower budgets</strong>. The graph shows the symbol recall of each mutation strategy using best-first search with the oracle scoring function and branching factor of 3.
+            </p>
+        </div>
+        <h3 class="title is-4">Informed Search</h3>
+        <div class="content">
+            <img src="static/images/traversal_ablation.png" alt="Comparison of Search Strategies" class="limited-width-image">
+            <p>
+                <strong><span style="color: #2E5894">Informed</span> (best-first) search outperforms <span style="color: #D64550">uninformed</span> (depth-first) and linear search strategies</strong> and performance improves with branching factor (BF), especially for informed search.
+            </p>
+        </div>
+
+
+    </div>
+</section>
+
+<section class="section">
+    <div class="container is-max-desktop content-block">
+        <h2 class="title is-3">Citation</h2>
+        <div class="content">
+            <pre><code>@article{khan2025mutagrep,
+  title={MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use},
+  author={Khan, Zaid and Farhadi, Ali and Krishna, Ranjay and Weihs, Luca and Bansal, Mohit and Gupta, Tanmay},
+  journal={arXiv preprint arXiv:xxxx.xxxx},
+  year={2025}
+}</code></pre>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="content has-text-centered">
+            <p>
+                Website template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>
+            </p>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.getElementById('copy-citation').addEventListener('click', function() {
+    const citationText = `@article{khan2025mutagrep,
+  title={MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use},
+  author={Khan, Zaid and Farhadi, Ali and Krishna, Ranjay and Weihs, Luca and Bansal, Mohit and Gupta, Tanmay},
+  journal={arXiv preprint arXiv:xxxx.xxxx},
+  year={2025}
+}`;
+    
+    navigator.clipboard.writeText(citationText).then(function() {
+        alert('Citation copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+});
+</script>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+
+</body>
+</html>
