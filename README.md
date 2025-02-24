@@ -27,10 +27,10 @@ pip install -e . --config-settings editable_mode=compat --no-deps --force-reinst
 # Getting Started
 First, make sure `OPEN_API_KEY` is set in your environment.
 Then, execute `examples/run_plan_search_for_repo.py`. This will:
-    - Mine symbols from the repository.
-    - Generate synthetic intents for each symbol.
-    - Embed the intents and index them in a vector database.
-    - Run plan search for the user query.
+- Mine symbols from the repository.
+- Generate synthetic intents for each symbol.
+- Embed the intents and index them in a vector database.
+- Run plan search for the user query.
 The output of each step will be cached, so if you run the script again, it will skip the steps that have already been completed.
 
 Here's an example command:
