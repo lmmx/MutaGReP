@@ -4,7 +4,7 @@
 
 <sup>1</sup>University of North Carolina, Chapel Hill   <sup>2</sup>Allen Institute for Artificial Intelligence (AI2)   <sup>3</sup>Vercept AI
 
-[![arXiv](https://img.shields.io/badge/arXiv-2410.06215-b31b1b.svg)](https://arxiv.org/abs/2410.06215)
+[![📄 Paper](docs/static/MutaGReP.pdf)](docs/static/MutaGReP.pdf)
 
 Given a user request that requires writing code against a specific codebase, MutaGReP searches for realizable plans to solve the user's request using LLM-guided tree search. The search procedure explores viable solutions by mutating plans while constraining them to symbols available in the codebase. The user request and detailed plan serve as an enriched query that provides necessary structured repo context to downstream coding systems, improving repo-level code generation performance.
 
