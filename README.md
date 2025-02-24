@@ -4,7 +4,7 @@
 
 <sup>1</sup>University of North Carolina, Chapel Hill   <sup>2</sup>Allen Institute for Artificial Intelligence (AI2)   <sup>3</sup>Vercept AI
 
-[📄 Paper](docs/static/MutaGReP.pdf)  [🌐 Website](https://zaidkhan.me/MutaGReP) |
+[📄 Paper](docs/static/MutaGReP.pdf)  [🌐 Website](https://zaidkhan.me/MutaGReP)
 
 ---
 
