@@ -73,9 +73,42 @@ with open("docs/plan_search_result_example.json", "r") as f:
     plan_search_output = SearchResult[PlanStep, GoalTest].model_validate_json(f.read())
 ```
 
+This will output a `plan_search_outputs` directory with the following structure:
+```
+Directory structure:
+└── /plan_search_outputs/
+    ├── cache/
+    │   └── mutagrep/
+    │      ├── symbols.jsonl
+    │      ├── synthetic_intents.jsonl
+    │      ├── core_file_names.json
+    │      ├── progress_cache.db
+    │      └── embed_synthetic_intents.completion_marker
+    └── mutagrep/
+        └── 2025-02-23T14:53:59.173112/
+            ├── plan_search_result.json
+            ├── rank_0_score_32_plan.md
+            ...
+            └── rank_9_score_29_plan.md
+```
+
+See [docs/example_human_readable_plan.md](docs/example_human_readable_plan.md) for an example of a markdown file containing a human readable plan corresponding to the highest scoring plan in the output directory (`rank_0_score_32_plan.md`).
+
+You can read the output of the plan search using the following code snippet:
+```python
+from mutagrep.plan_search.generic_search import SearchResult
+from mutagrep.plan_search.components import PlanStep, GoalTest
+
+with open("docs/plan_search_result_example.json", "r") as f:
+    plan_search_output = SearchResult[PlanStep, GoalTest].model_validate_json(f.read())
+```
+
 The `core_paths` argument is optional. If provided, the plan search will only consider symbols in these files. This can be helpful to narrow down the search space. Changing these paths will invalidate the cache and trigger re-indexing. 
 
 To manually invalidate the cache, delete the `cache` subdirectory in the output directory (by default, `plan_search_outputs`).
+
+# Repository Structure
+See [docs/repo_structure.md](docs/repo_structure.md) for info on important directories and where to find different components of the codebase.
 
 # Repository Structure
 See [docs/repo_structure.md](docs/repo_structure.md) for info on important directories and where to find different components of the codebase.
