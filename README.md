@@ -10,7 +10,7 @@
 
 Given a user request that requires writing code against a specific codebase, MutaGReP searches for realizable plans to solve the user's request using LLM-guided tree search. The search procedure explores viable solutions by mutating plans while constraining them to symbols available in the codebase. The user request and detailed plan serve as an enriched query that provides necessary structured repo context to downstream coding systems, improving repo-level code generation performance.
 
-![MutaGReP Overview](docs/static/images/teaser_white_bg.png)
+<img src="docs/static/images/teaser_white_bg.png" alt="MutaGReP Overview" width="350"/>
 
 # Installation
 ```bash
