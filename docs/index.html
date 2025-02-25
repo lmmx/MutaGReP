@@ -311,9 +311,9 @@
                     <div class="column has-text-centered">
                         <div class="publication-links">
                             <span class="link-block">
-                                <a href="static/MutaGReP.pdf" class="external-link button is-normal is-dark">
+                                <a href="https://arxiv.org/abs/2502.15872" class="external-link button is-normal is-dark">
                                     <span class="icon">
-                                        <i class="fas fa-file-pdf"></i>
+                                        <i class="ai ai-arxiv"></i>
                                     </span>
                                     <span>Paper</span>
                                 </a>
@@ -345,7 +345,7 @@
 <section class="hero teaser">
     <div class="container is-max-desktop">
         <div class="hero-body">
-            <img src="static/images/teaser.png" alt="MutaGReP Overview">
+            <img src="static/images/animationv2.gif" alt="MutaGReP Animation">
             <div class="subtitle has-text-left" style="font-family: 'DM Sans', sans-serif;">
                 <strong><span class="system-name">MutaGReP</span> Overview</strong>: Given a user request that requires writing code against a specific codebase, <span class="system-name">MutaGReP</span> searches for realizable plans to solve the user's request using LLM-guided tree search. The search procedure explores viable solutions by mutating plans while constraining them to symbols available in the codebase. The user request and detailed plan serve as an enriched query that provides necessary context from the repo in a structured form to downstream coding systems, improving repo-level code generation performance.
             </div>
@@ -356,8 +356,9 @@
 <section class="section">
     <div class="container is-max-desktop content-block">
         <div class="content">
+            <img src="static/images/teaser.png" alt="MutaGReP Overview" style="width: 100%; height: auto; margin-bottom: 20px;">
             <p>
-                Here's an example of a plan created by <span class="system-name">MutaGReP</span> for a user query in the <a href="https://github.com/deepmind/acme">DeepMind/ACME</a> repository.
+                Below is an example of a plan created by <span class="system-name">MutaGReP</span> for a user query in the <a href="https://github.com/deepmind/acme">DeepMind/ACME</a> repository.
             </p>
             <div id="full-plan-image" style="position: relative; height: 300px; overflow-y: scroll;">
                 <img src="static/images/full-plan.png" alt="Full Plan" style="width: 100%; height: auto;">
@@ -446,7 +447,7 @@
             <pre><code>@article{khan2025mutagrep,
   title={MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use},
   author={Khan, Zaid and Farhadi, Ali and Krishna, Ranjay and Weihs, Luca and Bansal, Mohit and Gupta, Tanmay},
-  journal={arXiv preprint arXiv:xxxx.xxxx},
+  journal={arXiv preprint arXiv:2502.15872},
   year={2025}
 }</code></pre>
         </div>
@@ -468,7 +469,7 @@ document.getElementById('copy-citation').addEventListener('click', function() {
     const citationText = `@article{khan2025mutagrep,
   title={MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use},
   author={Khan, Zaid and Farhadi, Ali and Krishna, Ranjay and Weihs, Luca and Bansal, Mohit and Gupta, Tanmay},
-  journal={arXiv preprint arXiv:xxxx.xxxx},
+  journal={arXiv preprint arXiv:2502.15872},
   year={2025}
 }`;
     

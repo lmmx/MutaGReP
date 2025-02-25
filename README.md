@@ -4,7 +4,7 @@
 
 <sup>1</sup>University of North Carolina, Chapel Hill   <sup>2</sup>Allen Institute for Artificial Intelligence (AI2)   <sup>3</sup>Vercept AI
 
-[📄 Paper](docs/static/MutaGReP.pdf)  [🌐 Website](https://zaidkhan.me/MutaGReP)
+[📄 Paper](https://arxiv.org/abs/2502.15872)  [🌐 Website](https://zaidkhan.me/MutaGReP)
 
 ---
 
@@ -120,7 +120,7 @@ If you find this work helpful, please cite:
 @article{khan2025mutagrep,
   title={MutaGReP: Execution-Free Repository-Grounded Plan Search for Code-Use},
   author={Khan, Zaid and Farhadi, Ali and Krishna, Ranjay and Weihs, Luca and Bansal, Mohit and Gupta, Tanmay},
-  journal={arXiv preprint arXiv:xxxx.xxxx},
+  journal={arXiv preprint arXiv:2502.15872},
   year={2025}
 }
 ```
