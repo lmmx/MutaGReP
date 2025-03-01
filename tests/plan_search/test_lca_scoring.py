@@ -14,7 +14,10 @@ from mutagrep.plan_search.lca_benchmark import (
 )
 
 PlanSearchLcaOutputT = PlanSearchForProblemOutput[
-    PlanStep, GoalTest, LongCodeArenaMetricSinglePlan, LongCodeArenaRecord
+    PlanStep,
+    GoalTest,
+    LongCodeArenaMetricSinglePlan,
+    LongCodeArenaRecord,
 ]
 
 

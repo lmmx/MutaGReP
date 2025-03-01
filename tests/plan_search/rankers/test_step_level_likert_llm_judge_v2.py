@@ -53,7 +53,7 @@ def test_likert_llm_judge_good_plan() -> None:
                         RetrievedSymbol(
                             symbol=file_operations_symbols[0],
                             score=1.0,
-                        )
+                        ),
                     ],
                 ),
             ),
@@ -73,7 +73,7 @@ def test_likert_llm_judge_good_plan() -> None:
                         RetrievedSymbol(
                             symbol=file_operations_symbols[1],
                             score=1.0,
-                        )
+                        ),
                     ],
                 ),
             ),
@@ -134,7 +134,7 @@ def test_likert_llm_judge_bad_plan() -> None:
                         RetrievedSymbol(
                             symbol=unrelated_symbols[0],
                             score=1.0,
-                        )
+                        ),
                     ],
                 ),
             ),
@@ -154,7 +154,7 @@ def test_likert_llm_judge_bad_plan() -> None:
                         RetrievedSymbol(
                             symbol=unrelated_symbols[1],
                             score=1.0,
-                        )
+                        ),
                     ],
                 ),
             ),

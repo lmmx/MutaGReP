@@ -1,17 +1,19 @@
 import unicodedata
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Generic, Protocol, Sequence, TypeVar, cast
+from typing import Protocol, cast
 
-import bm25s
 from bm25s import BM25
 from bm25s.hf import BM25HF
 from tqdm.auto import tqdm
 from typing_extensions import Self
 
 from mutagrep.coderec.v3.symbol_mining import Symbol
-from mutagrep.plan_search.domain_models import (RetrievedSymbol,
-                                                SymbolRetrievalScoreType,
-                                                SymbolRetriever)
+from mutagrep.plan_search.domain_models import (
+    RetrievedSymbol,
+    SymbolRetrievalScoreType,
+    SymbolRetriever,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 
@@ -28,7 +30,9 @@ class CodeNGramTokenizer:
         return tokenize_code_ngram(tokenizable, self.min_gram, self.max_gram)
 
     def tokenize(
-        self, tokenizables: Sequence[str], show_progress: bool = False
+        self,
+        tokenizables: Sequence[str],
+        show_progress: bool = False,
     ) -> list[list[str]]:
         if show_progress:
             iterator = tqdm(tokenizables)
@@ -52,7 +56,9 @@ class Bm25SymbolRetriever:
         self.tokenizer = tokenizer
 
     def __call__(
-        self, queries: Sequence[str], n_results: int = 5
+        self,
+        queries: Sequence[str],
+        n_results: int = 5,
     ) -> Sequence[RetrievedSymbol]:
         # Ignore any queries that are less than or equal to 2 characters, this causes
         # the BM25 retriever to fail.
@@ -102,7 +108,7 @@ class Bm25SymbolRetriever:
 
     @classmethod
     def load(cls, path: Path) -> Self:
-        with open(path / "symbol_sequence.jsonl", "r") as f:
+        with open(path / "symbol_sequence.jsonl") as f:
             symbol_sequence = [Symbol.model_validate_json(line) for line in f]
         text_retriever = BM25.load(path / "text_retriever")
         tokenizer = CodeNGramTokenizer()
@@ -113,18 +119,22 @@ implements(SymbolRetriever)(Bm25SymbolRetriever)
 
 
 def tokenize_code_ngram(
-    code_snippet: str, min_gram: int = 2, max_gram: int = 4
+    code_snippet: str,
+    min_gram: int = 2,
+    max_gram: int = 4,
 ) -> list[str]:
-    """
-    Tokenizes the input code snippet into n-grams based on the specified tokenizer settings.
+    """Tokenizes the input code snippet into n-grams based on the specified tokenizer settings.
 
-    Parameters:
+    Parameters
+    ----------
     - code_snippet (str): The code text to tokenize.
     - min_gram (int): The minimum length of n-grams.
     - max_gram (int): The maximum length of n-grams.
 
-    Returns:
+    Returns
+    -------
     - list[str]: A list of generated n-gram tokens.
+
     """
 
     def is_token_char(c):

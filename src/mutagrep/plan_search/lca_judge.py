@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
-from typing import Literal, Sequence
+from collections.abc import Sequence
+from typing import Literal
 
 import jinja2
 from openai import OpenAI
@@ -14,7 +15,7 @@ from mutagrep.plan_search.lca_benchmark import LongCodeArenaRecord
 
 JUDGE_PLAN_VS_PLAN_TEMPLATE = jinja2.Template(
     """You are choosing which of two step-by-step plans to accomplish a user query is better.
-    Each plan is a list of steps. 
+    Each plan is a list of steps.
     Alongside each step is a list of fully-qualified symbol names (e.g. functions, classes, method) that the plan has marked for use in that step.
     You will also be provided gold-standard reference code that accomplishes the user query.
     Compare each of the plans to the reference code, and choose the plan that aligns more closely with the reference code and user query.
@@ -27,7 +28,7 @@ JUDGE_PLAN_VS_PLAN_TEMPLATE = jinja2.Template(
     </explanation>
     <winner>Put either "A" or "B" here.</winner>
     </judgement>
-    ``` 
+    ```
 
     Example 1:
     ```xml
@@ -66,7 +67,7 @@ JUDGE_PLAN_VS_PLAN_TEMPLATE = jinja2.Template(
     - {{ step.content }}
     ### Symbols
     {% for symbol in step.search_result.instrumentation.symbols_considered %}
-    - {{ symbol.symbol.full_path }} 
+    - {{ symbol.symbol.full_path }}
     {% endfor %}
     {% endfor %}
 
@@ -76,7 +77,7 @@ JUDGE_PLAN_VS_PLAN_TEMPLATE = jinja2.Template(
     - {{ step.content }}
     ### Symbols
     {% for symbol in step.search_result.instrumentation.symbols_considered %}
-    - {{ symbol.symbol.full_path }} 
+    - {{ symbol.symbol.full_path }}
     {% endfor %}
     {% endfor %}
     """,
@@ -156,7 +157,9 @@ class PlanVsPlanJudge:
                 raise ValueError(f"Invalid winner: {winner.text}")
 
     def judge_plan_vs_plan(
-        self, plan_a: Sequence[PlanStep], plan_b: Sequence[PlanStep]
+        self,
+        plan_a: Sequence[PlanStep],
+        plan_b: Sequence[PlanStep],
     ) -> list[PlanVsPlanJudgeRound]:
         prompt = JUDGE_PLAN_VS_PLAN_TEMPLATE.render(
             user_query=self.record.instruction,
@@ -173,7 +176,9 @@ class PlanVsPlanJudge:
         return [self.parse_response(choice) for choice in response.choices]
 
     def __call__(
-        self, plan_a: Sequence[PlanStep], plan_b: Sequence[PlanStep]
+        self,
+        plan_a: Sequence[PlanStep],
+        plan_b: Sequence[PlanStep],
     ) -> Judgement:
         # To account for positional bias, we do two rounds of judging.
         # In the first round, we judge plan A vs plan B.
@@ -302,7 +307,7 @@ PLAN_TO_CODE_TEMPLATE = jinja2.Template(
     - {{ step.content }}
     ### Symbols
     {% for symbol in step.search_result.instrumentation.symbols_considered %}
-    - {{ symbol.symbol.full_path }} 
+    - {{ symbol.symbol.full_path }}
     {% endfor %}
     {% endfor %}
     """,
@@ -356,7 +361,7 @@ class CodeVsCodeJudge:
             if step.search_result.instrumentation is None:
                 raise ValueError(
                     "Code vs code judge relies on using the instrumentation object "
-                    "to get the symbols considered. But it was none."
+                    "to get the symbols considered. But it was none.",
                 )
             for (
                 retrieved_symbol
@@ -378,7 +383,9 @@ class CodeVsCodeJudge:
         return response.choices[0].message.content
 
     def judge_code_vs_code(
-        self, plan_a: Sequence[PlanStep], plan_b: Sequence[PlanStep]
+        self,
+        plan_a: Sequence[PlanStep],
+        plan_b: Sequence[PlanStep],
     ) -> list[PlanVsPlanJudgeRound]:
         code_a = self.convert_plan_to_code(plan_a)
         code_b = self.convert_plan_to_code(plan_b)
@@ -398,7 +405,9 @@ class CodeVsCodeJudge:
         return [self.parse_response(choice) for choice in response.choices]
 
     def __call__(
-        self, plan_a: Sequence[PlanStep], plan_b: Sequence[PlanStep]
+        self,
+        plan_a: Sequence[PlanStep],
+        plan_b: Sequence[PlanStep],
     ) -> Judgement:
         # To account for positional bias, we do two rounds of judging.
         # In the first round, we judge plan A vs plan B.

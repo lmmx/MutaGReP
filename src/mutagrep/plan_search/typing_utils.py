@@ -1,12 +1,13 @@
 import functools
-from typing import Callable, Type, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 P = TypeVar("P")
 Q = TypeVar("Q")
 
 
-def implements(protocol: Type[P]) -> Callable[[Type[P]], Type[P]]:
-    def decorator(cls: Type[P]) -> Type[P]:
+def implements(protocol: type[P]) -> Callable[[type[P]], type[P]]:
+    def decorator(cls: type[P]) -> type[P]:
         # The type checker will enforce that `cls` matches the `protocol` without casting.
         @functools.wraps(cls)
         def wrapper(*args, **kwargs):

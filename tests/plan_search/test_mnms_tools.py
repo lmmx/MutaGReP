@@ -1,6 +1,6 @@
 from mutagrep.plan_search.mnms_benchmark import (
-    MnmsRecord,
     MnmsPlanStep,
+    MnmsRecord,
     score_plan_for_record,
 )
 
@@ -68,9 +68,7 @@ def test_scoring_empty_plan():
 
 
 def test_scoring_with_alt_plans():
-    """
-    We should return the best score between the candidate plan and ground truth + alt plans.
-    """
+    """We should return the best score between the candidate plan and ground truth + alt plans."""
     record = MnmsRecord(
         id=0,
         user_request="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
@@ -83,7 +81,7 @@ def test_scoring_with_alt_plans():
             [
                 MnmsPlanStep(id=0, name="question_answering", args=None),
                 MnmsPlanStep(id=1, name="image_generation", args=None),
-            ]
+            ],
         ],
     )
 

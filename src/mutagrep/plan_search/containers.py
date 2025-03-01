@@ -1,7 +1,8 @@
 import heapq
 from collections import deque
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import Any, Callable, Generic, Iterator, Optional
+from typing import Generic
 
 from mutagrep.plan_search.domain_models import SearchContainer, T
 from mutagrep.plan_search.typing_utils import implements
@@ -25,7 +26,7 @@ class DequeSearchContainer(Generic[T]):
     def __len__(self) -> int:
         return len(self._deque)
 
-    def peek_left(self) -> Optional[T]:
+    def peek_left(self) -> T | None:
         return self._deque[0] if self._deque else None
 
     def __iter__(self) -> Iterator[T]:
@@ -53,7 +54,7 @@ class StackSearchContainer(Generic[T]):
     def __len__(self) -> int:
         return len(self._stack)
 
-    def peek_left(self) -> Optional[T]:
+    def peek_left(self) -> T | None:
         return self._stack[-1] if self._stack else None
 
     def __iter__(self) -> Iterator[T]:
@@ -75,6 +76,7 @@ class PriorityQueueSearchContainer(Generic[T]):
     Args:
         priority_function: Function that returns a priority value for each item
         max_heap: If True, operates as a max heap. If False (default), operates as a min heap
+
     """
 
     def __init__(self, priority_function: Callable[[T], float], max_heap: bool = False):
@@ -100,7 +102,7 @@ class PriorityQueueSearchContainer(Generic[T]):
     def __len__(self) -> int:
         return len(self._heap)
 
-    def peek_left(self) -> Optional[T]:
+    def peek_left(self) -> T | None:
         return self._heap[0].item if self._heap else None
 
     def __iter__(self) -> Iterator[T]:

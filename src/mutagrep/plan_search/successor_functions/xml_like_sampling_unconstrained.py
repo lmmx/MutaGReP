@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Callable, Optional, Sequence
 
 import jinja2
 from loguru import logger
@@ -8,22 +8,27 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 from typing_extensions import assert_never
 
-from mutagrep.coderec.v3.symbol_mining import (Symbol, SymbolCategory,
-                                               extract_symbol_signature)
+from mutagrep.coderec.v3.symbol_mining import (
+    Symbol,
+    SymbolCategory,
+    extract_symbol_signature,
+)
 from mutagrep.plan_search.components import GoalTestT, Node, PlanStep
-from mutagrep.plan_search.domain_models import (CodeSearchTool,
-                                                CodeSearchToolOutput, Plan,
-                                                SuccessorFunction)
+from mutagrep.plan_search.domain_models import (
+    CodeSearchTool,
+    CodeSearchToolOutput,
+    Plan,
+    SuccessorFunction,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 UNCONSTRAINED_PROMPT_TEMPLATE = jinja2.Template(
     """# Instructions
 You are given a plan for implementing a user request. Your task is to propose a modified version of the plan that might better satisfy the user request.
 
-For each step in the plan, you will be given feedback from a search tool. 
+For each step in the plan, you will be given feedback from a search tool.
 The feedback consists of:
 - Symbols in the codebase that are most likely to help accomplish the step
 - The signatures of those symbols
@@ -56,7 +61,7 @@ Format your output as an XML document with the following structure:
     </step>
 </plan>
 ```
-Here, `stepnum` is an integer and `stepdesc` is a string. 
+Here, `stepnum` is an integer and `stepdesc` is a string.
 IMPORTANT: The step number must be an integer enclosed in double quotes.
 IMPORTANT: Your output must be valid XML and must not contain any other text or comments that would break XML parsing.
 
@@ -111,7 +116,7 @@ class PromptContext:
     def get_signatures(self, search_result: CodeSearchToolOutput) -> list[str]:
         if search_result.instrumentation is None:
             raise ValueError(
-                "The search tool did not list which symbols were considered."
+                "The search tool did not list which symbols were considered.",
             )
         signatures: list[str] = []
         for symbol in search_result.instrumentation.symbols_considered:
@@ -119,7 +124,7 @@ class PromptContext:
                 signatures.append(extract_symbol_signature(symbol.symbol))
             except Exception:
                 logger.opt(exception=True).warning(
-                    f"Could not extract signature for symbol {symbol.symbol.name}"
+                    f"Could not extract signature for symbol {symbol.symbol.name}",
                 )
                 match symbol.symbol.symbol_type:
                     case SymbolCategory.FUNCTION:
@@ -152,7 +157,7 @@ class ParsedStepFromResponse(BaseModel):
 class ParsedResponse(BaseModel):
     parsed_steps: list[ParsedStepFromResponse]
     parsed_from: Choice
-    thought: Optional[str]
+    thought: str | None
 
 
 class ParseError(Exception):
@@ -170,14 +175,14 @@ class UnconstrainedXmlOutputSuccessorFunction:
         beam_width: int = 1,
         max_retries: int = 3,  # New parameter for configuring max retries
     ) -> None:
-        """
-        Parameters
+        """Parameters
         ----------
         search_tool: The search tool to use.
         starting_symbols: A list of symbols to give the LLM an idea of what functionality is available in the codebase.
         repo_tree: A string representation of the repository tree.
         beam_width: The number of beams to use.
         max_retries: Maximum number of additional attempts to make if parsing fails.
+
         """
         self.client = OpenAI()
         self.search_tool = search_tool
@@ -197,7 +202,7 @@ class UnconstrainedXmlOutputSuccessorFunction:
     @staticmethod
     def parse_steps_from_choice(
         choice: Choice,
-    ) -> tuple[list[ParsedStepFromResponse], Optional[str]]:
+    ) -> tuple[list[ParsedStepFromResponse], str | None]:
         content = choice.message.content
 
         # Check if content is wrapped in triple backticks
@@ -236,13 +241,14 @@ class UnconstrainedXmlOutputSuccessorFunction:
                 description = xml_node.find("description").text  # type: ignore
             except AttributeError:
                 logger.warning(
-                    f"No description found for step {step_number} in XML response. Skipping."
+                    f"No description found for step {step_number} in XML response. Skipping.",
                 )
                 logger.warning(f"XML response: {content}")
                 continue
 
             modification = ParsedStepFromResponse(
-                step_number=step_number, description=description  # type: ignore
+                step_number=step_number,
+                description=description,  # type: ignore
             )
             parsed_steps.append(modification)
 
@@ -264,7 +270,7 @@ class UnconstrainedXmlOutputSuccessorFunction:
                         parsed_steps=parsed_steps,
                         parsed_from=choice,
                         thought=thought,
-                    )
+                    ),
                 )
             except ParseError as e:
                 logger.warning(f"Skipping invalid response: {e}")
@@ -272,7 +278,8 @@ class UnconstrainedXmlOutputSuccessorFunction:
         return responses
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt_context = self.build_prompt_context(state)
         prompt = prompt_context.render()
@@ -306,11 +313,11 @@ class UnconstrainedXmlOutputSuccessorFunction:
             if len(addtl_proposed_successors) < remaining:
                 retry_count += 1
                 logger.warning(
-                    f"Got {len(addtl_proposed_successors)} valid responses out of {remaining} requested. Retry {retry_count}/{self.max_retries}"
+                    f"Got {len(addtl_proposed_successors)} valid responses out of {remaining} requested. Retry {retry_count}/{self.max_retries}",
                 )
             else:
                 logger.info(
-                    f"Got {len(addtl_proposed_successors)} valid responses out of {remaining} requested. Success!"
+                    f"Got {len(addtl_proposed_successors)} valid responses out of {remaining} requested. Success!",
                 )
                 break
 

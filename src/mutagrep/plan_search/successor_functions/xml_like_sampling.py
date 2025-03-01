@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import Sequence
+from collections.abc import Sequence
 
 import jinja2
 from loguru import logger
@@ -7,11 +7,13 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 from mutagrep.plan_search.components import GoalTestT, Node, PlanStep
-from mutagrep.plan_search.domain_models import (CodeSearchTool, Plan,
-                                                SuccessorFunction)
+from mutagrep.plan_search.domain_models import (
+    CodeSearchTool,
+    Plan,
+    SuccessorFunction,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 PROMPT_TEMPLATE = jinja2.Template(
@@ -94,9 +96,7 @@ class ParsedResponse(BaseModel):
     parsed_from: Choice
 
     def get_step_matching_index(self, step_index: int) -> ParsedStepFromResponse | None:
-        """
-        Returns the step matching the expected step index or None if not found.
-        """
+        """Returns the step matching the expected step index or None if not found."""
         for step in self.parsed_steps:
             if step.step_number == step_index:
                 return step
@@ -136,7 +136,6 @@ class XmlOutputSuccessorFunction:
 
         parsed_steps = []
         for xml_node in target_xml_nodes:
-
             try:
                 step_number = int(xml_node.attrib["number"])  # type: ignore
             except (TypeError, ValueError):
@@ -152,13 +151,14 @@ class XmlOutputSuccessorFunction:
                 description = xml_node.find("description").text  # type: ignore
             except AttributeError:
                 logger.warning(
-                    f"No description found for step {step_number} in XML response. Skipping."
+                    f"No description found for step {step_number} in XML response. Skipping.",
                 )
                 logger.warning(f"XML response: {content}")
                 continue
 
             modification = ParsedStepFromResponse(
-                step_number=step_number, description=description  # type: ignore
+                step_number=step_number,
+                description=description,  # type: ignore
             )
             parsed_steps.append(modification)
 
@@ -172,12 +172,13 @@ class XmlOutputSuccessorFunction:
         for choice in response.choices:
             parsed_steps = self.parse_steps_from_choice(choice)
             responses.append(
-                ParsedResponse(parsed_steps=parsed_steps, parsed_from=choice)
+                ParsedResponse(parsed_steps=parsed_steps, parsed_from=choice),
             )
         return responses
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state)
         response = self.client.chat.completions.create(
@@ -197,12 +198,12 @@ class XmlOutputSuccessorFunction:
         for proposed_successor in proposed_successors:
             # We need to check if the step is satisfiable.
             proposed_step = proposed_successor.get_step_matching_index(
-                expected_step_index
+                expected_step_index,
             )
 
             if proposed_step is None:
                 logger.warning(
-                    f"expected to find step index {expected_step_index} but only found {proposed_successor.step_indices}"
+                    f"expected to find step index {expected_step_index} but only found {proposed_successor.step_indices}",
                 )
                 continue
 
@@ -214,13 +215,14 @@ class XmlOutputSuccessorFunction:
                     index=len(state.plan.steps),
                     content=proposed_step_raw,
                     search_result=search_result,
-                )
+                ),
             ]
             existing_plan_steps = list(state.plan.steps)
             plan_steps = existing_plan_steps + proposed_steps
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)

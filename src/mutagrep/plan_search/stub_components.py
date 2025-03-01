@@ -1,4 +1,4 @@
-from typing import Generic, Sequence, cast
+from typing import Generic
 
 from mutagrep.plan_search.domain_models import Node
 

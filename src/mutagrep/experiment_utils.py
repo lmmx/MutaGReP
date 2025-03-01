@@ -20,8 +20,7 @@ def make_output_dir_for_experiment(script_name: str) -> Path:
 
 
 def get_output_dir_for_prev_experiment(experiment_identifier: str | int | Path) -> Path:
-    """
-    If a Path is given, return it directly.
+    """If a Path is given, return it directly.
     If an int is given, look in `experiments/` and return the path to the experiment starting with that number.
     Throw an error if there is not exactly one match.
     If an experiment name is given, return the path to the experiment with that name.
@@ -45,13 +44,13 @@ def get_output_dir_for_prev_experiment(experiment_identifier: str | int | Path) 
 
         if len(matches) != 1:
             raise ValueError(
-                f"Expected exactly one match for experiment number {experiment_identifier}, found {len(matches)}: {matches}"
+                f"Expected exactly one match for experiment number {experiment_identifier}, found {len(matches)}: {matches}",
             )
         script_name = matches[0].name
         experiment_path = get_experiment_path_from_script_name(script_name)
         if not experiment_path.exists():
             raise ValueError(
-                f"No experiment found with number {experiment_identifier}."
+                f"No experiment found with number {experiment_identifier}.",
             )
         return experiment_path
 
@@ -79,6 +78,7 @@ def make_output_dir_for_experiment_with_backup(script_name: str) -> Path:
 
     Returns:
         Path to the symlinked directory in the original workspace location
+
     """
     logger.info(f"Setting up experiment directory for script: {script_name}")
 
@@ -104,7 +104,7 @@ def make_output_dir_for_experiment_with_backup(script_name: str) -> Path:
             import shutil
 
             logger.info(
-                f"Original directory exists and is not a symlink: {original_dir}"
+                f"Original directory exists and is not a symlink: {original_dir}",
             )
             # Copy contents to backup before removing
             if backup_dir.exists():

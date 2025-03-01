@@ -6,13 +6,13 @@ requires = [
 
 [project]
 authors = [
-    { name = "Zaid Khan" },
-    { name = "Ali Farhadi" },
-    { name = "Ranjay Krishna" },
-    { name = "Luca Weihs" },
-    { name = "Mohit Bansal" },
-    { name = "Tanmay Gupta" },
-    { name = "Louis Maddox", email = "louismmx@gmail.com" },
+    {email = "louismmx@gmail.com", name = "Louis Maddox"},
+    {name = "Ali Farhadi"},
+    {name = "Luca Weihs"},
+    {name = "Mohit Bansal"},
+    {name = "Ranjay Krishna"},
+    {name = "Tanmay Gupta"},
+    {name = "Zaid Khan"},
 ]
 classifiers = [
     "Intended Audience :: Developers",
@@ -55,8 +55,8 @@ dependencies = [
     "tiktoken>=0.9.0",
     "together>=1.4.1",
     "tqdm>=4.67.1",
-    "tree-sitter>=0.24.0",
     "tree-sitter-python>=0.23.6",
+    "tree-sitter>=0.24.0",
 ]
 description = "Planning for code-use tasks using embedded intents."
 keywords = [
@@ -99,7 +99,7 @@ ignore = [
 ]
 select = [
     "C",
-    "D",
+    # "D",
     "E",
     "F",
     "I",

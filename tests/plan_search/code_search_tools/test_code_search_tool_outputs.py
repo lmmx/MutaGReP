@@ -1,11 +1,11 @@
+from mutagrep.coderec.v3.symbol_mining import SymbolCategory
 from mutagrep.plan_search.domain_models import (
+    CodeSearchInstrumentation,
     CodeSearchToolOutput,
     RetrievedSymbol,
     Symbol,
-    CodeSearchInstrumentation,
     SymbolRetrievalScoreType,
 )
-from mutagrep.coderec.v3.symbol_mining import SymbolCategory
 
 
 def test_code_search_tool_output_get_top_n_symbols_similarity_score() -> None:

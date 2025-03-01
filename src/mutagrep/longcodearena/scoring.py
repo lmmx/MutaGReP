@@ -4,7 +4,6 @@
 
 from abc import ABC, abstractmethod
 from textwrap import dedent
-from typing import Optional
 
 import tree_sitter_python as tspython
 from colorama import Fore
@@ -60,8 +59,8 @@ class TokenColor:
 class ParsedFile:
     def __init__(
         self,
-        filepath: Optional[str] = None,
-        code: Optional[str] = None,
+        filepath: str | None = None,
+        code: str | None = None,
         encoding: str = "utf8",
     ):
         self.filepath = filepath
@@ -69,7 +68,7 @@ class ParsedFile:
         if code is None:
             assert self.filepath is not None, "Either filepath or code must be provided"
             try:
-                with open(self.filepath, "r") as code_file:
+                with open(self.filepath) as code_file:
                     self.code = code_file.read()
             except UnicodeError:
                 self.code = ""
@@ -122,7 +121,7 @@ class ParsedFile:
         return self.query_to_set(captures)  # type: ignore[return-value]
 
     def query_to_set(self, captures: list) -> set:
-        return set(capture[0].text.decode("utf-8") for capture in captures)
+        return {capture[0].text.decode("utf-8") for capture in captures}
 
     def __repr__(self):
         return dedent(
@@ -133,7 +132,7 @@ class ParsedFile:
             called_functions: {self.called_functions}
             all_identifiers: {self.all_identifiers}
             imported_names: {self.imported_names}
-        """
+        """,
         )
 
     def colored_code(self, other_identifiers: set):
@@ -208,7 +207,10 @@ class ParsedFile:
 class Metric(ABC):
     @abstractmethod
     def score(
-        self, generated_file: str, reference_code: str, unique_apis: list[str]
+        self,
+        generated_file: str,
+        reference_code: str,
+        unique_apis: list[str],
     ) -> float:
         pass
 
@@ -222,7 +224,10 @@ class Overlap(Metric):
         pass
 
     def score(
-        self, generated_file: str, reference_code: str, unique_apis: list[str]
+        self,
+        generated_file: str,
+        reference_code: str,
+        unique_apis: list[str],
     ) -> float:
         parsed_generated_file = ParsedFile(code=generated_file)
         generated_function_calls = parsed_generated_file.called_functions
@@ -238,7 +243,10 @@ class ChrF(Metric):
         self.chrf = CHRF()
 
     def score(
-        self, generated_file: str, reference_code: str, unique_apis: list[str]
+        self,
+        generated_file: str,
+        reference_code: str,
+        unique_apis: list[str],
     ) -> float:
         return self.chrf.sentence_score(generated_file, [reference_code]).score / 100
 

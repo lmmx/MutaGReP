@@ -53,10 +53,11 @@ def test_direct_intent_search_bm25s(symbol_corpus: list[Symbol]) -> None:
 
 
 def test_direct_intent_search_vectorb(
-    symbol_corpus: list[Symbol], tmp_path: Path
+    symbol_corpus: list[Symbol],
+    tmp_path: Path,
 ) -> None:
     retriever = OpenAiVectorSearchSymbolRetriever.instantiate_from_path(
-        tmp_path / "vectorb_test_db"
+        tmp_path / "vectorb_test_db",
     )
     for symbol in symbol_corpus:
         assert symbol.docstring is not None
@@ -70,10 +71,11 @@ def test_direct_intent_search_vectorb(
 
 
 def test_direct_intent_search_vectorb_deduplication(
-    symbol_corpus: list[Symbol], tmp_path: Path
+    symbol_corpus: list[Symbol],
+    tmp_path: Path,
 ) -> None:
     retriever = OpenAiVectorSearchSymbolRetriever.instantiate_from_path(
-        tmp_path / "vectorb_test_db"
+        tmp_path / "vectorb_test_db",
     )
 
     symbol_a, symbol_b, *_ = symbol_corpus
@@ -93,7 +95,9 @@ def test_direct_intent_search_vectorb_deduplication(
     retriever.index(embeddables)
 
     search_tool = NoDuplicatesDirectIntentSearchTool(
-        retriever, symbols_to_retrieve=2, overretrieve_factor=10
+        retriever,
+        symbols_to_retrieve=2,
+        overretrieve_factor=10,
     )
 
     output = search_tool("I am addicted to strawberries")

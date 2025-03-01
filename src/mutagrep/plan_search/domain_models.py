@@ -1,13 +1,10 @@
+from collections.abc import Iterator, Sequence
 from dataclasses import field
 from enum import Enum
 from typing import (
     Generic,
-    Iterator,
-    Optional,
     Protocol,
-    Sequence,
     TypeVar,
-    Union,
 )
 
 from loguru import logger
@@ -17,8 +14,8 @@ from ulid import ULID
 
 from mutagrep.coderec.v3.symbol_mining import Symbol
 
-PlanStepT = TypeVar("PlanStepT", bound=Union[BaseModel, str, int])
-GoalTestT = TypeVar("GoalTestT", bound=Union[BaseModel, str, int, bool])
+PlanStepT = TypeVar("PlanStepT", bound=BaseModel | str | int)
+GoalTestT = TypeVar("GoalTestT", bound=BaseModel | str | int | bool)
 ProblemRecordT = TypeVar("ProblemRecordT", bound=BaseModel)
 MetricT = TypeVar("MetricT", bound=BaseModel)
 T = TypeVar("T")
@@ -29,15 +26,15 @@ class Plan(BaseModel, Generic[PlanStepT, GoalTestT]):
 
     user_query: str
     steps: list[PlanStepT]
-    reasoning: Optional[str] = None
-    goal_test: Optional[GoalTestT] = None
+    reasoning: str | None = None
+    goal_test: GoalTestT | None = None
 
 
 class Node(BaseModel, Generic[PlanStepT, GoalTestT]):
     """Class defining the interface for a node in the search tree."""
 
     plan: Plan[PlanStepT, GoalTestT]
-    parent: Optional[Self] = Field(default=None, repr=False)
+    parent: Self | None = Field(default=None, repr=False)
     level: int = 0
     children: list[Self] = field(default_factory=list)
     visited: bool = False
@@ -57,7 +54,8 @@ class SuccessorFunction(Protocol[PlanStepT]):
     """Protocol for successor functions."""
 
     def __call__(
-        self, state: Node[PlanStepT, GoalTestT]
+        self,
+        state: Node[PlanStepT, GoalTestT],
     ) -> Sequence[Node[PlanStepT, GoalTestT]]: ...
 
 
@@ -94,7 +92,7 @@ class SearchContainer(Protocol, Generic[T]):
 
     def __len__(self) -> int: ...
 
-    def peek_left(self) -> Optional[T]: ...
+    def peek_left(self) -> T | None: ...
 
     def __iter__(self) -> Iterator[T]: ...
 
@@ -107,7 +105,7 @@ class SymbolRetrievalScoreType(Enum):
 
 class RetrievedSymbol(BaseModel):
     symbol: Symbol
-    score: Optional[float] = None
+    score: float | None = None
     score_type: SymbolRetrievalScoreType = SymbolRetrievalScoreType.NONE
 
 
@@ -119,16 +117,16 @@ class CodeSearchInstrumentation(BaseModel):
 
 
 class CodeSearchToolOutput(BaseModel):
-    symbol_name: Optional[str]
-    justification: Optional[str]
+    symbol_name: str | None
+    justification: str | None
     satisfies_intention: bool
-    instrumentation: Optional[CodeSearchInstrumentation] = None
+    instrumentation: CodeSearchInstrumentation | None = None
 
     def get_top_n_symbols(self, n: int) -> list[RetrievedSymbol]:
         """Get the top n symbols from the search."""
         if self.instrumentation is None:
             raise ValueError(
-                "The search tool did not list which symbols were considered."
+                "The search tool did not list which symbols were considered.",
             )
 
         if len(self.instrumentation.symbols_considered) == 0:
@@ -137,7 +135,7 @@ class CodeSearchToolOutput(BaseModel):
         if n > len(self.instrumentation.symbols_considered):
             logger.warning(
                 f"The number of symbols to retrieve ({n}) is greater than the number"
-                f" of symbols considered ({len(self.instrumentation.symbols_considered)})"
+                f" of symbols considered ({len(self.instrumentation.symbols_considered)})",
             )
 
         score_type = (
@@ -149,7 +147,7 @@ class CodeSearchToolOutput(BaseModel):
                 raise ValueError(
                     "All symbols must have the same score type "
                     f"({first_symbol.symbol.name} {score_type} "
-                    f" != {symbol.symbol.name} {symbol.score_type})"
+                    f" != {symbol.symbol.name} {symbol.score_type})",
                 )
 
         # Assert that all symbols _have_ a score.
@@ -164,7 +162,7 @@ class CodeSearchToolOutput(BaseModel):
                 sort_direction = "descending"
             case SymbolRetrievalScoreType.NONE:
                 raise ValueError(
-                    f"The score type is {score_type} and cannot be ranked."
+                    f"The score type is {score_type} and cannot be ranked.",
                 )
             case _:
                 assert_never(score_type)
@@ -187,5 +185,7 @@ class CodeSearchTool(Protocol):
 
 class SymbolRetriever(Protocol):
     def __call__(
-        self, queries: Sequence[str], n_results: int = 5
+        self,
+        queries: Sequence[str],
+        n_results: int = 5,
     ) -> Sequence[RetrievedSymbol]: ...

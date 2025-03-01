@@ -3,7 +3,7 @@ import json
 import random
 from functools import cached_property
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import jinja2
 import numpy as np
@@ -82,7 +82,9 @@ def mine_symbols(repo_path: Path, cache_path: Path) -> list[Symbol]:
 
 
 def generate_synthetic_intents(
-    symbols: list[Symbol], cache_path: Path, repo_name: str
+    symbols: list[Symbol],
+    cache_path: Path,
+    repo_name: str,
 ) -> list[IntentForSymbol]:
     save_path = cache_path / repo_name / "synthetic_intents.jsonl"
     if save_path.exists():
@@ -108,9 +110,8 @@ def embed_synthetic_intents(
     symbols: list[Symbol],
     cache_path: Path,
     repo_name: str,
-    core_file_names: Optional[set[str]] = None,
+    core_file_names: set[str] | None = None,
 ) -> PydanticLancedbVectorDatabase[Symbol]:
-
     # First we create a cache to keep track of what has already been successfully embedded.
     progress_cache_path = cache_path / repo_name / "progress_cache.db"
     progress_cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -179,7 +180,7 @@ def embed_synthetic_intents(
         )
     else:
         logger.info(
-            f"Found {len(intents_for_symbols_in_core_files)} intent for symbols in core files for {repo_name}"
+            f"Found {len(intents_for_symbols_in_core_files)} intent for symbols in core files for {repo_name}",
         )
 
     # Now we embed the intents.
@@ -214,7 +215,7 @@ def embed_synthetic_intents(
             [
                 embeddable.payload.docstring is not None,
                 embeddable.payload.code is not None,
-            ]
+            ],
         )
 
     embeddables.sort(key=rank_not_null_embeddables_first, reverse=True)
@@ -272,7 +273,9 @@ def build_retriever_for_repo(
 
 
 def get_starting_symbols(
-    retriever: SymbolRetriever, user_query: str, num_starting_symbols: int
+    retriever: SymbolRetriever,
+    user_query: str,
+    num_starting_symbols: int,
 ) -> list[Symbol]:
     # We have to over-retrieve because each symbol is embedded 5x with different intents.
     retrieved_symbols = retriever([user_query], n_results=num_starting_symbols * 5)
@@ -294,7 +297,7 @@ def get_repo_tree(repo_path: Path) -> str:
 
 
 def make_ranker(
-    ranker_type: Literal["diversity", "likert"]
+    ranker_type: Literal["diversity", "likert"],
 ) -> RankingFunction[PlanStep, GoalTest]:
     match ranker_type:
         case "diversity":
@@ -334,7 +337,7 @@ def sort_nodes_with_likert_ranker(
                     [
                         step.achievable_with_symbols
                         for step in ulid_to_judge_response[ulid].step_judgements
-                    ]
+                    ],
                 )
                 if ulid_to_judge_response[ulid].step_judgements
                 else 0.0
@@ -356,7 +359,6 @@ def sort_nodes_for_plan_selection(
     nodes: list[Node[PlanStep, GoalTest]],
     ranker: RankingFunction[PlanStep, GoalTest],
 ) -> list[Node[PlanStep, GoalTest]]:
-
     match ranker:
         case MostUniqueSymbolsRanker():
             return sort_nodes_with_diversity_ranker(nodes, ranker)
@@ -376,7 +378,6 @@ def run_plan_search_for_user_query(
     budget: int = 160,
     ranker_type: Literal["diversity", "likert"] = "diversity",
 ) -> SearchResult[PlanStep, GoalTest]:
-
     retriever = build_retriever_for_repo(vector_store)
 
     starting_symbols = get_starting_symbols(retriever, user_query, 100)
@@ -404,7 +405,8 @@ def run_plan_search_for_user_query(
     ranker = make_ranker(ranker_type)
 
     container = PriorityQueueSearchContainer[Node[PlanStep, GoalTest]](
-        priority_function=ranker, max_heap=True
+        priority_function=ranker,
+        max_heap=True,
     )
 
     planner = PlanSearcher[PlanStep, GoalTest](
@@ -435,11 +437,10 @@ def run_plan_search_for_user_query(
 
 
 class PlanSearchSettings(BaseSettings):
-    """
-    Settings for running plan search.
+    """Settings for running plan search.
 
     Parameters
-    -----------
+    ----------
     user_query: str
         The user query to search a plan for.
     repo_path: Path
@@ -458,6 +459,7 @@ class PlanSearchSettings(BaseSettings):
     core_paths: Optional[list[Path]]
         The most important files in the repository. If provided, the search will index
         only the symbols in these files. This can be helpful to narrow down the search space.
+
     """
 
     user_query: str
@@ -467,12 +469,12 @@ class PlanSearchSettings(BaseSettings):
     beam_depth: int = Field(default=20)
     budget: int = Field(default=20)
     ranker_type: Literal["diversity", "likert"] = Field(default="diversity")
-    core_paths: Optional[list[Path]] = Field(default=None)
+    core_paths: list[Path] | None = Field(default=None)
 
     model_config = SettingsConfigDict(cli_parse_args=True)
 
     @cached_property
-    def core_file_names(self) -> Optional[set[str]]:
+    def core_file_names(self) -> set[str] | None:
         if self.core_paths is None:
             return None
         # Glob all the files in the core paths.
@@ -494,7 +496,9 @@ def plan_search(
 
     symbols = mine_symbols(repo_path=settings.repo_path, cache_path=cache_path)
     intents = generate_synthetic_intents(
-        symbols=symbols, cache_path=cache_path, repo_name=settings.repo_path.name
+        symbols=symbols,
+        cache_path=cache_path,
+        repo_name=settings.repo_path.name,
     )
     vector_store = embed_synthetic_intents(
         intents=intents,

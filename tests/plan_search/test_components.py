@@ -1,23 +1,24 @@
+import pytest
+import rich
+from pydantic import ValidationError
+
+from mutagrep.plan_search import mnms_benchmark
 from mutagrep.plan_search.components import (
-    SuccessorFunctionAddOrRemoveLastStep,
     GoalTestPlanSatisfiesUserRequest,
     LlmPlan,
     LlmPlanStep,
-    SuccessorFunctionMonotonicAddStep,
+    PlanStep,
+    SuccessorFunctionAddOrRemoveLastStep,
     SuccessorFunctionAddOrRemoveLastStepTextOnly,
+    SuccessorFunctionMonotonicAddStep,
 )
-from mutagrep.plan_search.domain_models import Node
-from mutagrep.plan_search.components import PlanStep
-from mutagrep.plan_search.domain_models import CodeSearchToolOutput
-import rich
-from pydantic import ValidationError
-import pytest
-from mutagrep.plan_search import mnms_benchmark
-from mutagrep.plan_search.domain_models import Plan
+from mutagrep.plan_search.domain_models import CodeSearchToolOutput, Node, Plan
 from mutagrep.plan_search.mnms_search_tool import MnmsSimpleCodeSearchTool
-from mutagrep.plan_search.successor_functions import plan_diff_successor_fn
-from mutagrep.plan_search.successor_functions import xml_like
-from mutagrep.plan_search.successor_functions import xml_like_sampling
+from mutagrep.plan_search.successor_functions import (
+    plan_diff_successor_fn,
+    xml_like,
+    xml_like_sampling,
+)
 
 
 class TestXmlLikeSamplingBasedSuccessorFnMonotonic:
@@ -38,9 +39,9 @@ class TestXmlLikeSamplingBasedSuccessorFnMonotonic:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -55,7 +56,7 @@ class TestXmlLikeSamplingBasedSuccessorFnMonotonic:
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -80,9 +81,9 @@ class TestXmlLikeSamplingBasedSuccessorFnMonotonic:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -108,9 +109,9 @@ class TestXmlLikeSuccessorFnMonotonic:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -125,7 +126,7 @@ class TestXmlLikeSuccessorFnMonotonic:
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -135,7 +136,7 @@ class TestPlanDiffSuccessorFnAddOrRemoveLastStep:
     @staticmethod
     def test_when_non_empty_plan() -> None:
         successor_fn = plan_diff_successor_fn.AppendNewStepOrRemoveLastStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
@@ -149,9 +150,9 @@ class TestPlanDiffSuccessorFnAddOrRemoveLastStep:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -159,13 +160,13 @@ class TestPlanDiffSuccessorFnAddOrRemoveLastStep:
     @staticmethod
     def test_when_empty_plan() -> None:
         successor_fn = plan_diff_successor_fn.AppendNewStepOrRemoveLastStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -175,7 +176,7 @@ class TestSuccessorFunctionAddOrRemoveLastStep:
     @staticmethod
     def test_when_non_empty_plan() -> None:
         successor_fn = SuccessorFunctionAddOrRemoveLastStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
@@ -189,9 +190,9 @@ class TestSuccessorFunctionAddOrRemoveLastStep:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -199,13 +200,13 @@ class TestSuccessorFunctionAddOrRemoveLastStep:
     @staticmethod
     def test_when_empty_plan() -> None:
         successor_fn = SuccessorFunctionAddOrRemoveLastStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -215,7 +216,7 @@ class TestSuccessorFunctionAddOrRemoveLastStepTextOnly:
     @staticmethod
     def test_when_non_empty_plan() -> None:
         successor_fn = SuccessorFunctionAddOrRemoveLastStepTextOnly(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
@@ -229,9 +230,9 @@ class TestSuccessorFunctionAddOrRemoveLastStepTextOnly:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -239,13 +240,13 @@ class TestSuccessorFunctionAddOrRemoveLastStepTextOnly:
     @staticmethod
     def test_when_empty_plan() -> None:
         successor_fn = SuccessorFunctionAddOrRemoveLastStepTextOnly(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -255,7 +256,7 @@ class TestSuccessorFunctionMonotonicAddStep:
     @staticmethod
     def test_when_non_empty_plan() -> None:
         successor_fn = SuccessorFunctionMonotonicAddStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
@@ -269,9 +270,9 @@ class TestSuccessorFunctionMonotonicAddStep:
                             justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         ),
                         index=0,
-                    )
+                    ),
                 ],
-            )
+            ),
         )
         successors = successor_fn(root)
         rich.print(successors)
@@ -280,13 +281,13 @@ class TestSuccessorFunctionMonotonicAddStep:
     @staticmethod
     def test_when_empty_plan() -> None:
         successor_fn = SuccessorFunctionMonotonicAddStep(
-            search_tool=MnmsSimpleCodeSearchTool()
+            search_tool=MnmsSimpleCodeSearchTool(),
         )
         root = Node(
             plan=Plan(
                 user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
                 steps=[],
-            )
+            ),
         )
 
         successors = successor_fn(root)

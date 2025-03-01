@@ -8,13 +8,13 @@ from ..components import PlanStep
 
 class MostUniqueSymbolsRanker(Generic[GoalTestT]):
     def __call__(self, state: Node[PlanStep, GoalTestT]) -> float:
-        scorable_plan = [step for step in state.plan.steps]
+        scorable_plan = list(state.plan.steps)
         symbol_names: set[str] = set()
         for step in scorable_plan:
             if step.search_result.instrumentation is None:
                 raise ValueError(
                     "Multi-symbol scoring relies on using the instrumentation object "
-                    "to get the symbols considered. But it was none."
+                    "to get the symbols considered. But it was none.",
                 )
             symbol_names.update(
                 retrieved_symbol.symbol.full_path

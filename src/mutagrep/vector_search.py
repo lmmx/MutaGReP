@@ -1,8 +1,8 @@
 import json
-from typing import Any, Generic, Optional, Protocol, Sequence, Type, TypeVar
+from collections.abc import Sequence
+from typing import Any, Generic, Protocol, TypeVar
 
 import lancedb
-from lancedb.pydantic import pydantic_to_schema
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from qdrant_client import QdrantClient, models
@@ -31,7 +31,9 @@ class RetrievedEmbeddable(BaseModel, Generic[BaseModelT]):
 
     @classmethod
     def from_scored_point(
-        cls, scored_point: ScoredPoint, model: Type[BaseModelT]
+        cls,
+        scored_point: ScoredPoint,
+        model: type[BaseModelT],
     ) -> Self:
         attrs = scored_point.model_dump()
         # The payload is actually the Embeddable.
@@ -90,7 +92,9 @@ class Embedder(Protocol):
 
 class QDrantVectorDatabase:
     def __init__(
-        self, embedder: Optional[Embedder] = None, vector_database_url: str = ":memory:"
+        self,
+        embedder: Embedder | None = None,
+        vector_database_url: str = ":memory:",
     ):
         self.vector_database_url = vector_database_url
         self.client = QdrantClient(self.vector_database_url)
@@ -108,23 +112,25 @@ class QDrantVectorDatabase:
         return success
 
     def insert(
-        self, docs: list[dict[str, Any]], collection_name: str = "default"
+        self,
+        docs: list[dict[str, Any]],
+        collection_name: str = "default",
     ) -> UpdateResult:
-        """
-        Insert a list of documents into a QDrant vector database.
+        """Insert a list of documents into a QDrant vector database.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         docs: list[dict[str, Any]]
             A list of documents to insert into the vector database. Each document should have a "key" field.
             The key field will be embedded and used for similarity search.
         collection_name: str
             The name of the collection to insert the documents into.
 
-        Returns:
-        --------
+        Returns
+        -------
         operation_info: UpdateResult
             Information about the operation.
+
         """
         if collection_name not in self.collection_names:
             if self.create_collection(collection_name):
@@ -162,12 +168,14 @@ class ObjectVectorDatabase(Protocol[BaseModelT]):
     def insert(self, docs: Sequence[Embeddable[BaseModelT]]) -> Any: ...
 
     def search(
-        self, query: str, limit: int = 10
+        self,
+        query: str,
+        limit: int = 10,
     ) -> Sequence[RetrievedEmbeddable[BaseModelT]]: ...
 
 
 class PydanticQdrantVectorDatabase(Generic[BaseModelT]):
-    def __init__(self, vector_database: QDrantVectorDatabase, model: Type[BaseModelT]):
+    def __init__(self, vector_database: QDrantVectorDatabase, model: type[BaseModelT]):
         self.vector_database = vector_database
         self.model = model
 
@@ -176,7 +184,9 @@ class PydanticQdrantVectorDatabase(Generic[BaseModelT]):
         return self.vector_database.insert(docs_unstructured)
 
     def search(
-        self, query: str, limit: int = 10
+        self,
+        query: str,
+        limit: int = 10,
     ) -> Sequence[RetrievedEmbeddable[BaseModelT]]:
         scored_points = self.vector_database.search(query, limit=limit)
         return [
@@ -189,8 +199,8 @@ class PydanticLancedbVectorDatabase(Generic[BaseModelT]):
     def __init__(
         self,
         database_url: str,
-        model: Type[BaseModelT],
-        embedder: Optional[Embedder] = None,
+        model: type[BaseModelT],
+        embedder: Embedder | None = None,
         table_name: str = "default.lancedb",
     ):
         self.database_url = database_url
@@ -212,7 +222,9 @@ class PydanticLancedbVectorDatabase(Generic[BaseModelT]):
             tbl = self.db.create_table(self.table_name, data=data)
 
     def search(
-        self, query: str, limit: int = 10
+        self,
+        query: str,
+        limit: int = 10,
     ) -> Sequence[RetrievedEmbeddable[BaseModelT]]:
         embedding = self.embedder([query])[0]
         results = self.db[self.table_name].search(embedding).limit(limit).to_list()

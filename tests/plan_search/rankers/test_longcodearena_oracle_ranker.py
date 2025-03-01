@@ -42,11 +42,11 @@ def test_oracle_ranker_perfect_plan() -> None:
                                     lineno=0,
                                 ),
                                 score=1.0,
-                            )
+                            ),
                         ],
                     ),
                 ),
-            )
+            ),
         )
 
     plan = Plan(
@@ -97,11 +97,11 @@ def test_oracle_ranker_imperfect_plan() -> None:
                                     lineno=0,
                                 ),
                                 score=1.0,
-                            )
+                            ),
                         ],
                     ),
                 ),
-            )
+            ),
         )
 
     # Take just half of the plan steps.

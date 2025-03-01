@@ -1,6 +1,6 @@
+from collections.abc import Callable, Collection, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable, Collection, Iterable
 
 import click
 import instructor
@@ -42,7 +42,8 @@ def generate_intents_for_symbols(
     symbols: Collection[Symbol],
     output_writer: Callable[[IntentForSymbol], None],
     intent_generator: Callable[
-        [Symbol, MetadataForPromptConstruction], Iterable[Intent]
+        [Symbol, MetadataForPromptConstruction],
+        Iterable[Intent],
     ],
     metadata: MetadataForPromptConstruction,
     parallel: bool = True,
@@ -75,7 +76,9 @@ def generate_intents_for_symbols(
                     output_writer(intent)
     else:
         for symbol in tqdm(
-            symbols, desc="Generating intents for symbols", unit="symbol"
+            symbols,
+            desc="Generating intents for symbols",
+            unit="symbol",
         ):
             intents_for_symbol = process_symbol(symbol)
             for intent in intents_for_symbol:
@@ -92,7 +95,8 @@ def is_test_heuristic(symbol: Symbol) -> bool:
 
 
 def num_tokens_from_string(
-    string: str | None, encoding_name: str = "cl100k_base"
+    string: str | None,
+    encoding_name: str = "cl100k_base",
 ) -> int:
     """Returns the number of tokens in a text string."""
     if string is None:
@@ -103,7 +107,10 @@ def num_tokens_from_string(
 
 
 def truncate_string_if_too_long(
-    string: str, max_tokens: int, encoding_name: str = "cl100k_base", log: bool = False
+    string: str,
+    max_tokens: int,
+    encoding_name: str = "cl100k_base",
+    log: bool = False,
 ) -> str:
     encoding = tiktoken.get_encoding(encoding_name)
     tokens = encoding.encode(string)
@@ -126,13 +133,13 @@ class OpenAIIntentGenerator:
         self.num_intents_per_symbol = num_intents_per_symbol
         self.client = instructor.from_openai(OpenAI())
         self.intent_generation_template = jinja2.Template(
-            """You are an expert Python developer. 
+            """You are an expert Python developer.
 You will be teaching junior developers learn to use a specific codebase well.
 You will be helping them memorize the symbols (functions, classes) in the codebase.
 The specific skill you will be teaching them is to be able to recall the right symbol to use when given an intent to perform a specific task within the codebase.
 
 You will be given the fully qualified name of the symbol in the codebase, and the name of the codebase itself.
-You will be asked to generate a list of intents. 
+You will be asked to generate a list of intents.
 Each intent should be written in the first person, as if you are giving the intent to the junior developer.
 Each intent should be unique and different from the other intents.
 
@@ -150,10 +157,10 @@ Please generate a list of {{ num_intents }} intents for the following symbol:
 Codebase: {{ repo_name }}
 Symbol: {{ symbol_fully_qualified_name }}
 Symbol Type: {{ symbol_type }}
-Symbol Code: 
+Symbol Code:
 ```python
 {{ symbol_code }}
-```"""
+```""",
         )
 
     @retry(
@@ -162,14 +169,17 @@ Symbol Code:
         retry=retry_if_exception_type(Exception),
     )
     def __call__(
-        self, symbol: Symbol, metadata: MetadataForPromptConstruction
+        self,
+        symbol: Symbol,
+        metadata: MetadataForPromptConstruction,
     ) -> Iterable[Intent]:
-
         prompt = self.intent_generation_template.render(
             repo_name=metadata.repo_name,
             symbol_fully_qualified_name=symbol.full_path,
             symbol_code=truncate_string_if_too_long(
-                symbol.code or "", max_tokens=10_000, log=True
+                symbol.code or "",
+                max_tokens=10_000,
+                log=True,
             ),
             symbol_type=symbol.symbol_type.value,
             num_intents=self.num_intents_per_symbol,
@@ -190,13 +200,16 @@ def generate_intents_for_all_symbols(
     symbols_dir: Path,
     output_dir: Path,
     intent_generator: Callable[
-        [Symbol, MetadataForPromptConstruction], Iterable[Intent]
+        [Symbol, MetadataForPromptConstruction],
+        Iterable[Intent],
     ] = OpenAIIntentGenerator(),
     idempotent: bool = True,
 ) -> None:
     with logging_redirect_tqdm():
         for repo_name in tqdm(
-            known_repos, desc="Generating intents for all repos", unit="repo"
+            known_repos,
+            desc="Generating intents for all repos",
+            unit="repo",
         ):
             path_to_symbol_jsonl = symbols_dir / f"{repo_name}.jsonl"
             if not path_to_symbol_jsonl.exists():
@@ -206,7 +219,8 @@ def generate_intents_for_all_symbols(
             logger.info("Generating intents for {repo_name}", repo_name=repo_name)
 
             symbol_reader = PydanticJSONLinesReader(
-                str(path_to_symbol_jsonl), RankableSymbol
+                str(path_to_symbol_jsonl),
+                RankableSymbol,
             )
             symbols = list(symbol_reader())
 
@@ -231,7 +245,8 @@ def generate_intents_for_all_symbols(
 
                 # Read the intents so we we can skip generating any we have already generated.
                 intent_reader = PydanticJSONLinesReader(
-                    str(path_to_intent_jsonl), IntentForSymbol
+                    str(path_to_intent_jsonl),
+                    IntentForSymbol,
                 )
                 existing_intents = list(intent_reader())
 

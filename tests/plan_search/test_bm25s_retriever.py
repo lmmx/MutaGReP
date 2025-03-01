@@ -1,16 +1,14 @@
+from pathlib import Path
+
+import pytest
+from bm25s import BM25
+
 from mutagrep.coderec.v3.symbol_mining import Symbol, SymbolCategory
 from mutagrep.plan_search.symbol_retrievers.bm25_simple import (
     Bm25SymbolRetriever,
     CodeNGramTokenizer,
-)
-from bm25s import BM25
-import pytest
-
-
-from mutagrep.plan_search.symbol_retrievers.bm25_simple import (
     tokenize_code_ngram,
 )
-from pathlib import Path
 
 
 @pytest.fixture

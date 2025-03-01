@@ -1,23 +1,25 @@
-import re
-from typing import (Any, Callable, Generic, Iterable, Literal, Optional,
-                    Sequence, cast)
+from collections.abc import Callable, Sequence
+from typing import (
+    Any,
+    Literal,
+    cast,
+)
 
 import instructor
 import jinja2
 from openai import OpenAI
-from openai.types.chat import ChatCompletion
-from pydantic import BaseModel, model_validator
-from typing_extensions import Self
+from pydantic import BaseModel
 
 from mutagrep.plan_search.domain_models import Node
 
 from ..components import BaseSuccessorFunctionInvocationLog, PlanStep
-from ..domain_models import (CodeSearchTool, CodeSearchToolOutput,
-                             GoalTestFunction, GoalTestT,
-                             HasBeenVisitedFunction, Node, Plan, PlanStepT,
-                             SuccessorFunction)
-from ..mnms_benchmark import MnmsPlanStep
-from ..mnms_search_tool import MnmsSimpleCodeSearchTool
+from ..domain_models import (
+    CodeSearchTool,
+    GoalTestT,
+    # Node,
+    Plan,
+    SuccessorFunction,
+)
 from ..typing_utils import implements
 
 
@@ -47,8 +49,8 @@ class AppendNewStepOrRemoveLastStep:
     def __init__(
         self,
         search_tool: CodeSearchTool,
-        fix_beam_width_to: Optional[int] = None,
-        log_sink: Optional[Callable[[BaseSuccessorFunctionInvocationLog], None]] = None,
+        fix_beam_width_to: int | None = None,
+        log_sink: Callable[[BaseSuccessorFunctionInvocationLog], None] | None = None,
     ) -> None:
         self.client = instructor.from_openai(OpenAI())
         self.search_tool = search_tool
@@ -66,13 +68,15 @@ class AppendNewStepOrRemoveLastStep:
         self.client_hook_captures["completion:kwargs"] = kwargs
 
     def hook_client_completion_response(
-        self, completion_response: dict[str, str]
+        self,
+        completion_response: dict[str, str],
     ) -> None:
         self.client_hook_captures["completion:response"] = completion_response
 
     @staticmethod
     def prepare_prompt(
-        state: Node[PlanStep, GoalTestT], fix_beam_width_to: Optional[int]
+        state: Node[PlanStep, GoalTestT],
+        fix_beam_width_to: int | None,
     ) -> str:
         template = jinja2.Template(
             """# Task
@@ -137,12 +141,12 @@ Good possible next steps might be:
 # Instructions
 Propose potential modifications to the plan to improve it.
 We will apply your modifications to the plan to obtain new plans.
-This is a process of trial and error and exploration, so make your modifications varied. 
+This is a process of trial and error and exploration, so make your modifications varied.
 The possible modifications are:
 - You can remove the last step of the plan if it is unnecessary or unsatisfiable.
 - You can add a new step to the end of the plan to get closer to satisfying the user request.
 {% if fix_beam_width_to %}
-You must propose exactly {{ fix_beam_width_to }} possible modifications to the plan. 
+You must propose exactly {{ fix_beam_width_to }} possible modifications to the plan.
 Each modification must be different from the others.
 {% else %}
 You can propose any number of modifications to the plan.
@@ -159,7 +163,8 @@ Think of each modification as a hypothesis about what the next step in the plan 
         return template.render(state=state, fix_beam_width_to=fix_beam_width_to)
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state, self.fix_beam_width_to)
         response = self.client.chat.completions.create(
@@ -185,17 +190,18 @@ Think of each modification as a hypothesis about what the next step in the plan 
                         index=len(state.plan.steps),
                         content=proposed_step_raw,
                         search_result=search_result,
-                    )
+                    ),
                 ]
                 existing_plan_steps = list(state.plan.steps)
                 plan_steps = existing_plan_steps + proposed_steps
             else:
                 raise ValueError(
-                    f"Invalid edit type: {proposed_modifications.action_type}"
+                    f"Invalid edit type: {proposed_modifications.action_type}",
                 )
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)

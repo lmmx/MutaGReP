@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
-from typing import Callable, Generic
+from collections.abc import Callable
+from typing import Generic
 
 import jinja2
 import numpy as np
@@ -10,8 +11,12 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from typing_extensions import Self
 
 from mutagrep.coderec.v3.symbol_mining import Symbol
-from mutagrep.plan_search.domain_models import (GoalTestT, Node, Plan,
-                                                RankingFunction)
+from mutagrep.plan_search.domain_models import (
+    GoalTestT,
+    Node,
+    Plan,
+    RankingFunction,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 from ..components import PlanStep
@@ -29,8 +34,8 @@ You will be given a user request and a plan to accomplish that user request with
 Each step of the plan will have a list of symbols that are relevant to that step.
 
 Judge the entire plan based on the following criteria on a scale of 1 to 7:
-- This plan solves the user request. 
-- This plan has no unnecessary or redundant steps. 
+- This plan solves the user request.
+- This plan has no unnecessary or redundant steps.
 
 Judge each step based on the following criteria on a scale of 1 to 7:
 - This step is achievable with the symbols found.
@@ -94,7 +99,7 @@ def make_prompt(plan: Plan[PlanStep, GoalTestT]) -> str:
         if step.search_result.instrumentation is None:
             raise ValueError(
                 "Likert LLM judge relies on using the instrumentation object "
-                "to get the symbols considered. But it was none."
+                "to get the symbols considered. But it was none.",
             )
         for retrieved_symbol in step.search_result.instrumentation.symbols_considered:
             all_symbols_used[retrieved_symbol.symbol.full_path] = (
@@ -149,9 +154,9 @@ class JudgeResponse(BaseModel):
                 StepJudgement(
                     step_index=int(step.find("step_index").text),  # type: ignore
                     achievable_with_symbols=int(
-                        step.find("achievable_with_symbols").text  # type: ignore
+                        step.find("achievable_with_symbols").text,  # type: ignore
                     ),
-                )
+                ),
             )
 
         return cls(
@@ -165,8 +170,8 @@ def default_aggregation_fn(judge_response: JudgeResponse) -> float:
     # Get the average of the step judgements
     step_level_mean = float(
         np.mean(
-            [step.achievable_with_symbols for step in judge_response.step_judgements]
-        )
+            [step.achievable_with_symbols for step in judge_response.step_judgements],
+        ),
     )
 
     return float(
@@ -175,14 +180,15 @@ def default_aggregation_fn(judge_response: JudgeResponse) -> float:
                 judge_response.solves_user_request,
                 step_level_mean,
                 judge_response.no_unnecessary_steps,
-            ]
-        )
+            ],
+        ),
     )
 
 
 class StepLevelLikertLlmJudge(Generic[GoalTestT]):
     def __init__(
-        self, aggregation_fn: Callable[[JudgeResponse], float] = default_aggregation_fn
+        self,
+        aggregation_fn: Callable[[JudgeResponse], float] = default_aggregation_fn,
     ):
         self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         self.aggregation_fn = aggregation_fn
@@ -207,7 +213,8 @@ class StepLevelLikertLlmJudge(Generic[GoalTestT]):
         return JudgeResponse.from_xml(response.choices[0].message.content)
 
     @retry(
-        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
     )
     def __call__(self, state: Node[PlanStep, GoalTestT]) -> float:
         judge_response = self.get_judge_response(state)

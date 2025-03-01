@@ -1,15 +1,18 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from typing_extensions import Self
 
 from mutagrep.coderec.v3.symbol_mining import Symbol
 from mutagrep.plan_search.domain_models import RetrievedSymbol, SymbolRetriever
 from mutagrep.plan_search.typing_utils import implements
-from mutagrep.vector_search import (Embeddable, ObjectVectorDatabase,
-                                    OpenAIEmbedder,
-                                    PydanticLancedbVectorDatabase,
-                                    RetrievedEmbeddable)
+from mutagrep.vector_search import (
+    Embeddable,
+    ObjectVectorDatabase,
+    OpenAIEmbedder,
+    PydanticLancedbVectorDatabase,
+    RetrievedEmbeddable,
+)
 
 
 class OpenAiVectorSearchSymbolRetriever:
@@ -17,23 +20,25 @@ class OpenAiVectorSearchSymbolRetriever:
         self,
         vector_database: ObjectVectorDatabase[Symbol],
     ):
-        """
-        Parameters:
-        -----------
+        """Parameters
+        ----------
         vector_database: ObjectVectorDatabase[Symbol]
             The vector database to use for storing and retrieving symbols.
+
         """
         self.vector_database = vector_database
 
     @classmethod
     def instantiate_from_path(
-        cls, path: Path, deduplicate_retrievals: bool = False
+        cls,
+        path: Path,
+        deduplicate_retrievals: bool = False,
     ) -> Self:
-        """
-        Instantiate from a filepath (db need not exist) using the right embedder and model.
-        """
+        """Instantiate from a filepath (db need not exist) using the right embedder and model."""
         vector_database = PydanticLancedbVectorDatabase(
-            database_url=str(path), model=Symbol, embedder=OpenAIEmbedder()
+            database_url=str(path),
+            model=Symbol,
+            embedder=OpenAIEmbedder(),
         )
         return cls(vector_database)
 
@@ -45,7 +50,9 @@ class OpenAiVectorSearchSymbolRetriever:
         self.vector_database.insert(embeddables)
 
     def __call__(
-        self, queries: Sequence[str], n_results: int = 5
+        self,
+        queries: Sequence[str],
+        n_results: int = 5,
     ) -> Sequence[RetrievedSymbol]:
         retrieved_embeddables: list[RetrievedEmbeddable[Symbol]] = []
         for query in queries:
@@ -58,7 +65,7 @@ class OpenAiVectorSearchSymbolRetriever:
                     symbol=retrieved_embeddable.payload,
                     score=retrieved_embeddable.score,
                     score_type=retrieved_embeddable.score_type,
-                )
+                ),
             )
         return retrieved_symbols
 

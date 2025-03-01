@@ -1,5 +1,3 @@
-import ast
-from pathlib import Path
 from mutagrep.coderec.v3.symbol_mining import (
     Symbol,
     SymbolCategory,

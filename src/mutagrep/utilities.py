@@ -1,21 +1,22 @@
-import functools
+from collections.abc import Generator, Iterator, MutableMapping, Sequence
 from pathlib import Path
 from threading import Lock
-from typing import (Generator, Generic, Iterator, MutableMapping, Optional,
-                    Protocol, Sequence, Type, TypeVar, Union, cast)
+from typing import (
+    Generic,
+    TypeVar,
+    cast,
+)
 
 import hydra
 from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel
 from sqlalchemy import Column, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 
 class LogOnce:
-    """
-    LogOnce ensures that a message is logged only once.
+    """LogOnce ensures that a message is logged only once.
 
     When used as a context manager, multiple log calls can be made within the same context block.
     Any subsequent uses of the LogOnce context manager will no-op.
@@ -36,6 +37,7 @@ class LogOnce:
 
         # Subsequent log calls will no-op
         log_once("This message will not be logged.")
+
     """
 
     def __init__(self, name: str):
@@ -86,12 +88,12 @@ class PydanticJSONLinesWriter(Generic[T]):
 
 
 class PydanticJSONLinesReader(Generic[T]):
-    def __init__(self, file_path: str | Path, model: Type[T]):
+    def __init__(self, file_path: str | Path, model: type[T]):
         self.file_path = file_path
         self.model = model
 
     def __call__(self) -> Generator[T, None, None]:
-        with open(self.file_path, "r") as f:
+        with open(self.file_path) as f:
             for line in f:
                 yield self.model.parse_raw(line)
 
@@ -102,9 +104,10 @@ class PydanticJSONLinesReader(Generic[T]):
 # TODO: Instead of doing it this way, we should save the models in something like
 # Parquet or Arrow to save space. Base64 encoding the images makes them 33% larger.
 class PydanticJSONLinesIO(Generic[T]):
-    def __init__(self, file_path: str | Path, model: Type[T] = BaseModel):
+    def __init__(self, file_path: str | Path, model: type[T] = BaseModel):
         self.reader: PydanticJSONLinesReader[T] = PydanticJSONLinesReader(
-            file_path, model
+            file_path,
+            model,
         )
         self.writer: PydanticJSONLinesWriter[T] = PydanticJSONLinesWriter(file_path)
 
@@ -123,11 +126,14 @@ class PydanticJSONLinesIO(Generic[T]):
 
 
 class ImmutablePydanticJSONLinesCollection(Generic[T]):
-    def __init__(self, file_path: str, model: Type[T]):
+    def __init__(self, file_path: str, model: type[T]):
         self.io = PydanticJSONLinesIO(file_path, model)
         self.items = self.io.read_all()
         logger.info(
-            "Loaded {} items of class {} from {}", len(self.items), model, file_path
+            "Loaded {} items of class {} from {}",
+            len(self.items),
+            model,
+            file_path,
         )
 
     def __iter__(self):
@@ -146,7 +152,7 @@ class ImmutablePydanticJSONLinesCollection(Generic[T]):
 def load_hydra_config_from_paths(
     config_name: str,
     config_path: str,
-    overrides: Optional[list[str]] = None,
+    overrides: list[str] | None = None,
 ) -> DictConfig:
     hydra.initialize(config_path=config_path, version_base=None)
     config = hydra.compose(config_name=config_name, overrides=overrides or [])
@@ -191,7 +197,7 @@ class SqliteKeyValueStore:
         finally:
             session.close()
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         session = self.Session()
         try:
             entry = session.query(KeyValueModel).filter_by(key=key).first()
@@ -211,7 +217,8 @@ class SqliteKeyValueStore:
         session = self.Session()
         try:
             return cast(
-                list[str], [entry.key for entry in session.query(KeyValueModel).all()]
+                list[str],
+                [entry.key for entry in session.query(KeyValueModel).all()],
             )
         finally:
             session.close()
@@ -220,7 +227,8 @@ class SqliteKeyValueStore:
         session = self.Session()
         try:
             return cast(
-                list[str], [entry.value for entry in session.query(KeyValueModel).all()]
+                list[str],
+                [entry.value for entry in session.query(KeyValueModel).all()],
             )
         finally:
             session.close()
@@ -240,7 +248,7 @@ class SqliteKeyValueStore:
 
 
 class PydanticSqliteKeyValueStore(MutableMapping[str, T], Generic[T]):
-    def __init__(self, model: Type[T], db_url: str = "sqlite:///key_value_store.db"):
+    def __init__(self, model: type[T], db_url: str = "sqlite:///key_value_store.db"):
         self.db_url = db_url
         self.store = SqliteKeyValueStore(db_url)
         self.model = model

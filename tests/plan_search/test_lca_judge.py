@@ -1,14 +1,15 @@
-from mutagrep.plan_search.lca_judge import PlanVsPlanJudge, CodeVsCodeJudge
-from mutagrep.longcodearena.types import LongCodeArenaRecord
-from mutagrep.plan_search.components import PlanStep, GoalTest
-from mutagrep.plan_search.domain_models import (
-    CodeSearchToolOutput,
-    CodeSearchInstrumentation,
-    RetrievedSymbol,
-    Plan,
-)
-from mutagrep.coderec.v3.symbol_mining import Symbol, SymbolCategory
 import pytest
+
+from mutagrep.coderec.v3.symbol_mining import Symbol, SymbolCategory
+from mutagrep.longcodearena.types import LongCodeArenaRecord
+from mutagrep.plan_search.components import GoalTest, PlanStep
+from mutagrep.plan_search.domain_models import (
+    CodeSearchInstrumentation,
+    CodeSearchToolOutput,
+    Plan,
+    RetrievedSymbol,
+)
+from mutagrep.plan_search.lca_judge import CodeVsCodeJudge, PlanVsPlanJudge
 
 
 @pytest.fixture
@@ -20,9 +21,9 @@ def good_plan_bad_plan_record() -> tuple[LongCodeArenaRecord, Plan, Plan]:
 def process_files():
     with open('input.txt', 'r') as f:
         data = f.read()
-    
+
     processed = data.upper()  # Simple processing
-    
+
     with open('output.txt', 'w') as f:
         f.write(processed)
         """,
@@ -206,7 +207,7 @@ def process_files():
 
 
 def test_plan_vs_plan_judge(
-    good_plan_bad_plan_record: tuple[LongCodeArenaRecord, Plan, Plan]
+    good_plan_bad_plan_record: tuple[LongCodeArenaRecord, Plan, Plan],
 ) -> None:
     record, good_plan, bad_plan = good_plan_bad_plan_record
     judge = PlanVsPlanJudge(record)
@@ -218,7 +219,7 @@ def test_plan_vs_plan_judge(
 
 
 def test_code_vs_code_judge(
-    good_plan_bad_plan_record: tuple[LongCodeArenaRecord, Plan, Plan]
+    good_plan_bad_plan_record: tuple[LongCodeArenaRecord, Plan, Plan],
 ) -> None:
     record, good_plan, bad_plan = good_plan_bad_plan_record
     judge = CodeVsCodeJudge(record)

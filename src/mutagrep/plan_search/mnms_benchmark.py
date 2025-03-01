@@ -1,16 +1,19 @@
 import ast
 import json
-import random
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import (Any, Iterable, Iterator, Literal, Optional, Sequence,
-                    TypedDict, cast)
+from typing import (
+    Any,
+    Literal,
+    TypedDict,
+    cast,
+)
 
 import numpy as np
 import pandas as pd
-import rich
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -22,13 +25,13 @@ class MnmsRecordRaw(TypedDict):
     user_request: str
     plan_str: str
     code_str: str
-    alt_plans_str: Optional[str]
+    alt_plans_str: str | None
 
 
 class MnmsPlanStep(BaseModel):
     id: int
     name: str
-    args: Optional[dict[str, Any]]
+    args: dict[str, Any] | None
 
 
 class MnmsRecord(BaseModel):
@@ -68,8 +71,7 @@ class MnmsRecord(BaseModel):
 
 
 class MnmsMetric(BaseModel):
-    """
-    The results of scoring a candidate plan for an MnmsRecord.
+    """The results of scoring a candidate plan for an MnmsRecord.
 
     precision: Of the tools called in the plan, how many were in the ground truth plan?
     recall: Of the tools in the ground truth plan, how many were in the candidate plan?
@@ -88,22 +90,18 @@ class MnmsMetricsForBestPlan(MnmsMetric):
 
 
 def normalize_tool_names(tool_name: str) -> str:
-    """
-    The tool name might have dots in it, like foo.bar.text_classification.
+    """The tool name might have dots in it, like foo.bar.text_classification.
     We only want to keep the last part.
     """
     return tool_name.split(".")[-1]
 
 
 def score_candidate_plan_against_reference_plan(
-    reference_plan: list[MnmsPlanStep], candidate_plan: list[MnmsPlanStep]
+    reference_plan: list[MnmsPlanStep],
+    candidate_plan: list[MnmsPlanStep],
 ) -> MnmsMetric:
-    candidate_plan_tools = set(
-        normalize_tool_names(step.name) for step in candidate_plan
-    )
-    reference_plan_tools = set(
-        normalize_tool_names(step.name) for step in reference_plan
-    )
+    candidate_plan_tools = {normalize_tool_names(step.name) for step in candidate_plan}
+    reference_plan_tools = {normalize_tool_names(step.name) for step in reference_plan}
 
     true_positives = len(candidate_plan_tools.intersection(reference_plan_tools))
     false_positives = len(candidate_plan_tools - reference_plan_tools)
@@ -124,22 +122,26 @@ def score_candidate_plan_against_reference_plan(
     length_error = abs(len(reference_plan) - len(candidate_plan))
 
     return MnmsMetric(
-        precision=precision, recall=recall, f1=f1, length_error=length_error
+        precision=precision,
+        recall=recall,
+        f1=f1,
+        length_error=length_error,
     )
 
 
 def score_plan_for_record(
-    record: MnmsRecord, candidate_plan: list[MnmsPlanStep]
+    record: MnmsRecord,
+    candidate_plan: list[MnmsPlanStep],
 ) -> MnmsMetric:
-
     score_against_ground_truth = score_candidate_plan_against_reference_plan(
-        record.plan, candidate_plan
+        record.plan,
+        candidate_plan,
     )
 
     score_against_alt_plans: list[MnmsMetric] = []
     for alt_plan in record.alt_plans:
         score_against_alt_plans.append(
-            score_candidate_plan_against_reference_plan(alt_plan, candidate_plan)
+            score_candidate_plan_against_reference_plan(alt_plan, candidate_plan),
         )
 
     scores_against_all_plans = [score_against_ground_truth] + score_against_alt_plans
@@ -162,7 +164,7 @@ def stratify_by_step_count(
 
 # TODO: Mark this as deprecated.
 def load_dev_set_from_fs() -> list[MnmsRecord]:
-    with open("mnms_dev_set.json", "r") as f:
+    with open("mnms_dev_set.json") as f:
         return [MnmsRecord.model_validate_json(line) for line in f]
 
 
@@ -188,7 +190,8 @@ def load_dev_set() -> list[MnmsRecord]:
 
 
 def filter_unique_tools(
-    records: Sequence[MnmsRecord], length: Literal[1, 2, 3] = 3
+    records: Sequence[MnmsRecord],
+    length: Literal[1, 2, 3] = 3,
 ) -> list[MnmsRecord]:
     match length:
         case 1:
@@ -202,7 +205,7 @@ def filter_unique_tools(
             # is equal to the length of the plan.
             filtered_records = []
             for record in matched_records:
-                if len(set(step.name for step in record.plan)) == length:
+                if len({step.name for step in record.plan}) == length:
                     filtered_records.append(record)
             return filtered_records
         case _:
@@ -245,11 +248,11 @@ class MnmsDataset(Sequence[MnmsRecord]):
 
         match split:
             case MnmSplitChoices.CODENAV_HARD_SLICE:
-                with open(Path(__file__).parent / "mnms_hard_slice_ids.json", "r") as f:
+                with open(Path(__file__).parent / "mnms_hard_slice_ids.json") as f:
                     self.ids_to_keep = set(json.load(f))
             case MnmSplitChoices.CODENAV_EVAL_SLICE:
                 with open(
-                    Path(__file__).parent / "codenav_mnms_eval_slice_ids.json", "r"
+                    Path(__file__).parent / "codenav_mnms_eval_slice_ids.json",
                 ) as f:
                     self.ids_to_keep = set(json.load(f))
             case _:
@@ -283,7 +286,7 @@ class BestMetricResults(BaseModel):
 
     @staticmethod
     def create_human_readable_row(
-        pair: tuple[MnmsMetricsForBestPlan, Node]
+        pair: tuple[MnmsMetricsForBestPlan, Node],
     ) -> dict[str, Any]:
         metric, node = pair
         return {

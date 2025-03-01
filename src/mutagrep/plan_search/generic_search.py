@@ -1,5 +1,6 @@
+from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Callable, Generic, Optional, Sequence
+from typing import Generic
 
 from loguru import logger
 from pydantic import BaseModel
@@ -32,7 +33,8 @@ class SearchResult(BaseModel, Generic[PlanStepT, GoalTestT]):
 
 
 class PlanSearchForProblemOutput(
-    BaseModel, Generic[PlanStepT, GoalTestT, MetricT, ProblemRecordT]
+    BaseModel,
+    Generic[PlanStepT, GoalTestT, MetricT, ProblemRecordT],
 ):
     search_result: SearchResult[PlanStepT, GoalTestT]
     metrics: list[tuple[MetricT, Node[PlanStepT, GoalTestT]]]
@@ -47,11 +49,12 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
         check_is_goal_state_fn: GoalTestFunction[PlanStepT, GoalTestT],
         container_factory: Callable[[], SearchContainer[Node[PlanStepT, GoalTestT]]],
         check_has_been_visited_fn: HasBeenVisitedFunction[
-            PlanStepT, GoalTestT
+            PlanStepT,
+            GoalTestT,
         ] = AlwaysReturnsVisitedFalse(),
-        node_budget: Optional[int] = None,
-        beam_width: Optional[int] = None,
-        beam_depth: Optional[int] = None,
+        node_budget: int | None = None,
+        beam_width: int | None = None,
+        beam_depth: int | None = None,
     ):
         self.unvisited_nodes: SearchContainer[Node[PlanStepT, GoalTestT]] = (
             container_factory()
@@ -67,8 +70,7 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
 
     @property
     def nodes(self) -> list[Node[PlanStepT, GoalTestT]]:
-        """
-        Returns every node created during the search.
+        """Returns every node created during the search.
         This includes nodes that are in the queue and nodes that have been visited.
         """
         return self.visited_nodes + list(self.unvisited_nodes)
@@ -79,14 +81,13 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
         successor_fn: SuccessorFunction[PlanStepT],
         visited_nodes: list[Node[PlanStepT, GoalTestT]],
         unvisited_nodes: SearchContainer[Node[PlanStepT, GoalTestT]],
-        beam_depth: Optional[int],
-        node_budget: Optional[int],
-        beam_width: Optional[int],
+        beam_depth: int | None,
+        node_budget: int | None,
+        beam_width: int | None,
     ) -> Sequence[Node[PlanStepT, GoalTestT]]:
-
         if beam_depth is not None and node.level >= beam_depth:
             logger.info(
-                f"Skipping expansion. beam_depth={beam_depth} >= node.level={node.level}"
+                f"Skipping expansion. beam_depth={beam_depth} >= node.level={node.level}",
             )
             return []
 
@@ -99,7 +100,7 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
             budget_remaining = node_budget - len(visited_nodes) - len(unvisited_nodes)
             if budget_remaining <= 0:
                 logger.info(
-                    f"Skipping expansion. budget_used={len(visited_nodes) + len(unvisited_nodes)} >= node_budget={node_budget}"
+                    f"Skipping expansion. budget_used={len(visited_nodes) + len(unvisited_nodes)} >= node_budget={node_budget}",
                 )
                 return []
             successors = successors[:budget_remaining]
@@ -107,7 +108,8 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
         return successors
 
     def expand_node(
-        self, node: Node[PlanStepT, GoalTestT]
+        self,
+        node: Node[PlanStepT, GoalTestT],
     ) -> Sequence[Node[PlanStepT, GoalTestT]]:
         return self._expand_node(
             node=node,
@@ -126,7 +128,7 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
             if budget_remaining <= 0:
                 logger.info(
                     f"Terminating search. Budget exceeded. budget_expended={len(self.visited_nodes)} + {len(self.unvisited_nodes)}"
-                    f" >= node_budget={self.node_budget}"
+                    f" >= node_budget={self.node_budget}",
                 )
                 return SearchState.BUDGET_EXCEEDED
 
@@ -139,7 +141,7 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
             self.visited_nodes.append(node)
             node.visited = True
             logger.info(
-                f"Visiting node. node.level={node.level} plan_length={len(node.plan.steps)} queue_size={len(self.unvisited_nodes)}"
+                f"Visiting node. node.level={node.level} plan_length={len(node.plan.steps)} queue_size={len(self.unvisited_nodes)}",
             )
 
             node.plan.goal_test = (goal_test := self.is_goal_state(node))
@@ -151,7 +153,7 @@ class PlanSearcher(Generic[PlanStepT, GoalTestT]):
 
             successors = self.expand_node(node)
             logger.info(
-                f"Expanded node at level {node.level} into {len(successors)} successors"
+                f"Expanded node at level {node.level} into {len(successors)} successors",
             )
 
             for successor in successors:

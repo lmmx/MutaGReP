@@ -15,7 +15,8 @@ class DirectIntentSearchTool:
 
     def __call__(self, intention: str) -> CodeSearchToolOutput:
         retrieved_symbols = self.symbol_retriever(
-            queries=[intention], n_results=self.symbols_to_retrieve
+            queries=[intention],
+            n_results=self.symbols_to_retrieve,
         )
         return CodeSearchToolOutput(
             satisfies_intention=True,
@@ -40,13 +41,14 @@ class NoDuplicatesDirectIntentSearchTool:
         symbols_to_retrieve: int = 5,
         overretrieve_factor: int = 5,
     ):
-        """
-        This tool will retrieve more symbols than requested and then deduplicate them.
+        """This tool will retrieve more symbols than requested and then deduplicate them.
 
-        Parameters:
+        Parameters
+        ----------
             symbol_retriever: The symbol retriever to use.
             symbols_to_retrieve: The number of symbols to retrieve.
             overretrieve_factor: The factor by which to overretrieve symbols.
+
         """
         self.symbol_retriever = symbol_retriever
         self.symbols_to_retrieve = symbols_to_retrieve
@@ -83,7 +85,8 @@ class NoDuplicatesDirectIntentSearchTool:
     def __call__(self, intention: str) -> CodeSearchToolOutput:
         num_symbols_to_retrieve = self.symbols_to_retrieve * self.overretrieve_factor
         retrieved_symbols = self.symbol_retriever(
-            queries=[intention], n_results=num_symbols_to_retrieve
+            queries=[intention],
+            n_results=num_symbols_to_retrieve,
         )
         output_maybe_duplicates = CodeSearchToolOutput(
             satisfies_intention=True,

@@ -1,4 +1,5 @@
-from typing import Any, Generic, Optional, Protocol, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, Generic, Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,8 @@ def load_longcode_arena_records() -> list[LongCodeArenaRecord]:
     ds = cast(
         DatasetDict,
         load_dataset(
-            "JetBrains-Research/lca-library-based-code-generation", split="test"
+            "JetBrains-Research/lca-library-based-code-generation",
+            split="test",
         ),
     )
 
@@ -34,9 +36,7 @@ class TokenUsage(BaseModel):
 
 
 class LongCodeArenaMetricSinglePlan(BaseModel):
-    """
-    The results of scoring a candidate plan for an LongCodeArenaRecord.
-    """
+    """The results of scoring a candidate plan for an LongCodeArenaRecord."""
 
     precision: float
     recall: float
@@ -46,13 +46,11 @@ class LongCodeArenaMetricSinglePlan(BaseModel):
     satisfiable_f1: float
     hit_symbols: list[str]
     missed_symbols: list[str]
-    token_usage: Optional[TokenUsage] = None
+    token_usage: TokenUsage | None = None
 
 
 class LongCodeArenaMetricBestPlan(LongCodeArenaMetricSinglePlan):
-    """
-    The results of scoring the best plan for an LongCodeArenaRecord.
-    """
+    """The results of scoring the best plan for an LongCodeArenaRecord."""
 
     nodes_expanded_to_reach: int
 
@@ -63,8 +61,7 @@ class PlanStep(Protocol):
 
 def calculate_token_usage(
     candidate_plan: Sequence[PlanStep],
-) -> Optional[TokenUsage]:
-
+) -> TokenUsage | None:
     if not candidate_plan:
         return None
 
@@ -91,7 +88,8 @@ def calculate_token_usage(
 
 
 def score_plan_for_record(
-    record: LongCodeArenaRecord, candidate_plan: Sequence[PlanStep]
+    record: LongCodeArenaRecord,
+    candidate_plan: Sequence[PlanStep],
 ) -> LongCodeArenaMetricSinglePlan:
     # Extract unique APIs from the record
     unique_apis = set(record.unique_apis)
@@ -183,7 +181,7 @@ class BestMetricResults(BaseModel, Generic[PlanStepT, GoalTestT]):
 
     @staticmethod
     def create_human_readable_row(
-        pair: tuple[LongCodeArenaMetricBestPlan, Node[PlanStepT, GoalTestT]]
+        pair: tuple[LongCodeArenaMetricBestPlan, Node[PlanStepT, GoalTestT]],
     ) -> dict[str, Any]:
         metric, node = pair
         return {
@@ -253,7 +251,8 @@ def rank_best_plans_for_record(
 
 
 def score_plan_for_record_multisymbol(
-    record: LongCodeArenaRecord, candidate_plan: Sequence[PlanStep]
+    record: LongCodeArenaRecord,
+    candidate_plan: Sequence[PlanStep],
 ) -> LongCodeArenaMetricSinglePlan:
     # Extract unique APIs from the record
     unique_apis = set(record.unique_apis)
@@ -264,7 +263,7 @@ def score_plan_for_record_multisymbol(
         if step.search_result.instrumentation is None:
             raise ValueError(
                 "Multi-symbol scoring relies on using the instrumentation object "
-                "to get the symbols considered. But it was none."
+                "to get the symbols considered. But it was none.",
             )
         symbol_names.update(
             retrieved_symbol.symbol.full_path

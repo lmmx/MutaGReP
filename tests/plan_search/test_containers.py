@@ -1,4 +1,5 @@
 import pytest
+
 from mutagrep.plan_search.containers import (
     PriorityQueueSearchContainer,
     StackSearchContainer,

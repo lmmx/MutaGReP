@@ -41,11 +41,11 @@ def test_most_unique_symbols_ranker() -> None:
                                     lineno=0,
                                 ),
                                 score=1.0,
-                            )
+                            ),
                         ],
                     ),
                 ),
-            )
+            ),
         )
 
     plan = Plan(

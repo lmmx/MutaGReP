@@ -103,7 +103,7 @@ with open("docs/plan_search_result_example.json", "r") as f:
     plan_search_output = SearchResult[PlanStep, GoalTest].model_validate_json(f.read())
 ```
 
-The `core_paths` argument is optional. If provided, the plan search will only consider symbols in these files. This can be helpful to narrow down the search space. Changing these paths will invalidate the cache and trigger re-indexing. 
+The `core_paths` argument is optional. If provided, the plan search will only consider symbols in these files. This can be helpful to narrow down the search space. Changing these paths will invalidate the cache and trigger re-indexing.
 
 To manually invalidate the cache, delete the `cache` subdirectory in the output directory (by default, `plan_search_outputs`).
 

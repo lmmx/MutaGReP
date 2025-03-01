@@ -4,10 +4,7 @@ from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from mutagrep.coderec.v3.symbol_mining import Symbol, SymbolCategory
-from mutagrep.plan_search.code_search_tools.direct_intent_search import \
-    DirectIntentSearchTool
-from mutagrep.plan_search.symbol_retrievers.bm25_simple import \
-    Bm25SymbolRetriever
+from mutagrep.plan_search.symbol_retrievers.bm25_simple import Bm25SymbolRetriever
 
 from .domain_models import CodeSearchTool, CodeSearchToolOutput
 from .typing_utils import implements
@@ -294,7 +291,10 @@ class MnmsSimpleCodeSearchTool:
     )
     def __call__(self, intention: str) -> CodeSearchToolOutput:
         prompt = select_relevant_functions_prompt.render(
-            intention=intention, tools=MNMS_TOOLS, trim_blocks=True, lstrip_blocks=True
+            intention=intention,
+            tools=MNMS_TOOLS,
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         response = self.client.chat.completions.create(
             model="gpt-4o",

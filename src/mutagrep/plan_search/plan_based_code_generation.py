@@ -1,7 +1,8 @@
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional, Sequence, cast
+from typing import Literal, cast
 
 import jinja2
 import numpy as np
@@ -39,7 +40,7 @@ You will also be given a map of the codebase structure.
 {% endif %}
 You can use all of the above information to write code that accomplishes the user query.
 {% if encourage_symbol_usage %}
-It is important to stick to the plan as closely as possible and consider using the symbols provided for each step. 
+It is important to stick to the plan as closely as possible and consider using the symbols provided for each step.
 {% endif %}
 
 Produce your output in the following format:
@@ -49,7 +50,7 @@ Produce your output in the following format:
 Do not include any other text in your output. Stick exactly to the required format.
 
 {%- if repo_tree is not none -%}
-# Repository Tree 
+# Repository Tree
 {{ repo_tree }}
 {%- endif -%}
 
@@ -90,8 +91,8 @@ class CodeGenerationContext(BaseModel):
     plan: list[PlanStep]
     all_symbols_used: list[Symbol]
     code_display_mode: Literal["signature", "full"] = "full"
-    repo_tree: Optional[str] = None
-    project_defined_elements: Optional[list[str]] = None
+    repo_tree: str | None = None
+    project_defined_elements: list[str] | None = None
     encourage_symbol_usage: bool = False
 
     def code_display(self, symbol: Symbol) -> str:
@@ -166,7 +167,7 @@ class CompletedCodeGenTask(BaseModel):
     origin_plan_performance: float
     overlap_scores: ScoreBundle
     chrf_scores: ScoreBundle
-    response_tokens: Optional[int] = None
+    response_tokens: int | None = None
 
     @computed_field
     @property
@@ -191,9 +192,7 @@ def compute_score_bundles_from_code_snippets(
     code_snippets: list[str],
     record: LongCodeArenaRecord,
 ) -> tuple[ScoreBundle, ScoreBundle]:
-    """
-    Compute overlap and chrf scores for a list of code snippets.
-    """
+    """Compute overlap and chrf scores for a list of code snippets."""
     overlap_scores: list[float] = []
     overlap_scorer = Overlap()
     for code_snippet in code_snippets:
@@ -202,7 +201,7 @@ def compute_score_bundles_from_code_snippets(
                 generated_file=code_snippet,
                 reference_code=record.clean_reference,
                 unique_apis=record.unique_apis,
-            )
+            ),
         )
 
     chrf_scores: list[float] = []
@@ -213,7 +212,7 @@ def compute_score_bundles_from_code_snippets(
                 generated_file=code_snippet,
                 reference_code=record.clean_reference,
                 unique_apis=record.unique_apis,
-            )
+            ),
         )
 
     return ScoreBundle(scores=overlap_scores), ScoreBundle(scores=chrf_scores)
@@ -243,8 +242,10 @@ class LongCodeArenaCodeGenTask(BaseModel):
 
     @classmethod
     def get_cached(
-        cls, record_idx: int, output_directory: Path
-    ) -> Optional[CompletedCodeGenTask]:
+        cls,
+        record_idx: int,
+        output_directory: Path,
+    ) -> CompletedCodeGenTask | None:
         if not (save_path := output_directory / f"{record_idx}.json").exists():
             return None
         return CompletedCodeGenTask.model_validate_json(save_path.read_text())
@@ -256,10 +257,10 @@ class LongCodeArenaCodeGenTask(BaseModel):
     def __call__(self) -> CompletedCodeGenTask:
         if self.completion_marker.exists():
             logger.info(
-                f"Skipping task {self.record_idx} because it has already been completed"
+                f"Skipping task {self.record_idx} because it has already been completed",
             )
             return CompletedCodeGenTask.model_validate_json(
-                self.task_completion_save_path.read_text()
+                self.task_completion_save_path.read_text(),
             )
 
         temperature = 0.7
@@ -383,7 +384,7 @@ def generate_report(
                 "plan_performance_delta": task.plan_performance_delta,
             }
             for task in tasks
-        ]
+        ],
     )
 
     # Sort by median score

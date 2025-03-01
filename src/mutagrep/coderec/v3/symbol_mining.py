@@ -1,9 +1,10 @@
 import ast
 import os
 from collections import defaultdict
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Sequence, TypedDict
+from typing import Literal, TypedDict
 
 import networkx as nx
 import pandas as pd
@@ -23,8 +24,8 @@ class SymbolCategory(Enum):
 
 class Symbol(BaseModel):
     name: str
-    docstring: Optional[str]
-    code: Optional[str]
+    docstring: str | None
+    code: str | None
     filename: str
     filepath: str
     lineno: int
@@ -124,9 +125,10 @@ class SymbolExtractor(ast.NodeVisitor):
 
 
 def extract_symbols_from_file(
-    file_path: Path | str, base_directory: Path
+    file_path: Path | str,
+    base_directory: Path,
 ) -> list[Symbol]:
-    with open(file_path, "r", encoding="utf-8") as file:
+    with open(file_path, encoding="utf-8") as file:
         file_content = file.read()
         tree = ast.parse(file_content, filename=file_path)
     extractor = SymbolExtractor(file_path, file_content, base_directory)
@@ -155,12 +157,13 @@ def get_all_pyfiles_under_directory(directory: str | Path) -> list[str]:
             if file.endswith(".py"):
                 # Try parsing the file to catch syntax errors. If we cannot parse
                 # the file, we skip it, because no static analysis can be done.
-                with open(os.path.join(root, file), "r", encoding="utf-8") as f:
+                with open(os.path.join(root, file), encoding="utf-8") as f:
                     try:
                         ast.parse(f.read())
                     except SyntaxError:
                         logger.warning(
-                            "Skipping {} due to syntax error.", os.path.join(root, file)
+                            "Skipping {} due to syntax error.",
+                            os.path.join(root, file),
                         )
                         continue
                 python_files.append(os.path.join(root, file))
@@ -168,14 +171,16 @@ def get_all_pyfiles_under_directory(directory: str | Path) -> list[str]:
 
 
 def count_symbol_usage_frequency(
-    symbols: list[Symbol], code_files: list[str], base_directory: str
+    symbols: list[Symbol],
+    code_files: list[str],
+    base_directory: str,
 ) -> dict[Symbol, int]:
     symbol_dict = {symbol.full_path: symbol for symbol in symbols}
     usage_count = defaultdict(int)
     known_symbols_usage_count: dict[Symbol, int] = defaultdict(int)
 
     for code_file in code_files:
-        with open(code_file, "r", encoding="utf-8") as f:
+        with open(code_file, encoding="utf-8") as f:
             content = f.read()
             tree = ast.parse(content, filename=code_file)
             import_paths = {}
@@ -208,7 +213,8 @@ def count_symbol_usage_frequency(
                 elif isinstance(node, ast.Attribute):
                     if isinstance(node.value, ast.Name):
                         value_name = import_paths.get(
-                            node.value.id, f"{current_module}.{node.value.id}"
+                            node.value.id,
+                            f"{current_module}.{node.value.id}",
                         )
                         full_path = f"{value_name}.{node.attr}"
                     if full_path in symbol_dict:
@@ -218,7 +224,8 @@ def count_symbol_usage_frequency(
                 elif isinstance(node, ast.Call):
                     if isinstance(node.func, ast.Name):
                         full_path = import_paths.get(
-                            node.func.id, f"{current_module}.{node.func.id}"
+                            node.func.id,
+                            f"{current_module}.{node.func.id}",
                         )
                         if full_path in symbol_dict:
                             known_symbols_usage_count[symbol_dict[full_path]] += 1
@@ -238,13 +245,15 @@ def count_symbol_usage_frequency(
 
 
 def count_symbol_references(
-    symbols: list[Symbol], code_files: list[str], base_directory: str
+    symbols: list[Symbol],
+    code_files: list[str],
+    base_directory: str,
 ) -> dict[Symbol, int]:
     symbol_dict = {symbol.full_path: symbol for symbol in symbols}
     reference_counts = defaultdict(int)
 
     for code_file in code_files:
-        with open(code_file, "r", encoding="utf-8") as f:
+        with open(code_file, encoding="utf-8") as f:
             content = f.read()
             tree = ast.parse(content, filename=code_file)
             import_paths = {}
@@ -268,7 +277,8 @@ def count_symbol_references(
                 if isinstance(node, ast.Call):
                     if isinstance(node.func, ast.Name):
                         full_path = import_paths.get(
-                            node.func.id, f"{current_module}.{node.func.id}"
+                            node.func.id,
+                            f"{current_module}.{node.func.id}",
                         )
                         if full_path in symbol_dict:
                             reference_counts[symbol_dict[full_path]] += 1
@@ -295,7 +305,9 @@ def count_symbol_references(
 
 
 def build_call_graph(
-    symbols: list[Symbol], code_files: list[str], base_directory: str
+    symbols: list[Symbol],
+    code_files: list[str],
+    base_directory: str,
 ) -> nx.DiGraph:
     logger.debug("Starting to build call graph.")
     call_graph = nx.DiGraph()
@@ -303,7 +315,7 @@ def build_call_graph(
 
     for code_file in code_files:
         try:
-            with open(code_file, "r", encoding="utf-8") as f:
+            with open(code_file, encoding="utf-8") as f:
                 content = f.read()
             tree = ast.parse(content, filename=code_file)
             import_paths = {}
@@ -316,7 +328,7 @@ def build_call_graph(
                     for alias in node.names:
                         import_paths[alias.asname or alias.name] = alias.name
                         logger.debug(
-                            f"Found import: {alias.name} as {alias.asname or alias.name}"
+                            f"Found import: {alias.name} as {alias.asname or alias.name}",
                         )
 
                 def visit_ImportFrom(self, node):
@@ -325,7 +337,7 @@ def build_call_graph(
                         full_name = f"{module}.{alias.name}"
                         import_paths[alias.asname or alias.name] = full_name
                         logger.debug(
-                            f"Found import from {module}: {alias.name} as {alias.asname or alias.name}"
+                            f"Found import from {module}: {alias.name} as {alias.asname or alias.name}",
                         )
 
             ImportVisitor().visit(tree)
@@ -347,33 +359,36 @@ def build_call_graph(
                                     callee_full_path = f"{current_module}.{callee_name}"
                                 if callee_full_path in symbol_dict:
                                     call_graph.add_edge(
-                                        func_full_path, callee_full_path
+                                        func_full_path,
+                                        callee_full_path,
                                     )
                                     logger.debug(
-                                        f"Added edge from {func_full_path} to {callee_full_path}"
+                                        f"Added edge from {func_full_path} to {callee_full_path}",
                                     )
                                 else:
                                     logger.debug(
-                                        f"Unresolved call: {callee_full_path} in {func_full_path}"
+                                        f"Unresolved call: {callee_full_path} in {func_full_path}",
                                     )
                             elif isinstance(subnode.func, ast.Attribute):
                                 if isinstance(subnode.func.value, ast.Name):
                                     value_name = import_paths.get(
-                                        subnode.func.value.id, subnode.func.value.id
+                                        subnode.func.value.id,
+                                        subnode.func.value.id,
                                     )
                                     callee_full_path = (
                                         f"{value_name}.{subnode.func.attr}"
                                     )
                                     if callee_full_path in symbol_dict:
                                         call_graph.add_edge(
-                                            func_full_path, callee_full_path
+                                            func_full_path,
+                                            callee_full_path,
                                         )
                                         logger.debug(
-                                            f"Added edge from {func_full_path} to {callee_full_path}"
+                                            f"Added edge from {func_full_path} to {callee_full_path}",
                                         )
                                     else:
                                         logger.debug(
-                                            f"Unresolved attribute call: {callee_full_path} in {func_full_path}"
+                                            f"Unresolved attribute call: {callee_full_path} in {func_full_path}",
                                         )
         except Exception as e:
             logger.error(f"Error processing file {code_file}: {e}")
@@ -388,9 +403,6 @@ def compute_symbol_dependencies(call_graph: nx.DiGraph):
 
     # Initialize the dependency count dictionary
     dependency_count = {node: 0 for node in call_graph.nodes()}
-    import ipdb
-
-    ipdb.set_trace()
 
     # Traverse the nodes in reverse topological order to count dependencies
     for node in reversed(topological_order):
@@ -399,7 +411,9 @@ def compute_symbol_dependencies(call_graph: nx.DiGraph):
 
     # Sort the symbols based on the number of dependencies in descending order
     sorted_symbols = sorted(
-        dependency_count.items(), key=lambda item: item[1], reverse=True
+        dependency_count.items(),
+        key=lambda item: item[1],
+        reverse=True,
     )
 
     return sorted_symbols
@@ -452,11 +466,13 @@ def compute_symbol_dependencies_with_cycles(call_graph: nx.DiGraph) -> dict[str,
 
 
 def count_symbols_with_most_dependencies(
-    symbols: list[Symbol], code_files: list[str], base_directory: str
+    symbols: list[Symbol],
+    code_files: list[str],
+    base_directory: str,
 ) -> dict[Symbol, int]:
     call_graph = build_call_graph(symbols, code_files, base_directory)
     dependency_counts: dict[str, int] = compute_symbol_dependencies_with_cycles(
-        call_graph
+        call_graph,
     )
 
     fullpath_to_symbol = {symbol.full_path: symbol for symbol in symbols}
@@ -470,7 +486,9 @@ def count_symbols_with_most_dependencies(
 
 
 def determine_symbol_degree_from_call_graph(
-    symbols: list[Symbol], code_files: list[str], base_directory: str
+    symbols: list[Symbol],
+    code_files: list[str],
+    base_directory: str,
 ) -> dict[Symbol, SymbolDegree]:
     call_graph = build_call_graph(symbols, code_files, base_directory)
     symbol_to_degrees: dict[Symbol, SymbolDegree] = {}
@@ -504,10 +522,14 @@ def compute_rankable_symbols(directory: str | Path) -> list[RankableSymbol]:
     usage_frequency = count_symbol_usage_frequency(symbols, code_files, str(directory))
     connectivity = count_symbol_references(symbols, code_files, str(directory))
     symbol_degrees = determine_symbol_degree_from_call_graph(
-        symbols, code_files, str(directory)
+        symbols,
+        code_files,
+        str(directory),
     )
     topological_dependencies = count_symbols_with_most_dependencies(
-        symbols, code_files, str(directory)
+        symbols,
+        code_files,
+        str(directory),
     )
     # high_level_api = determine_high_level_api_via_call_graph(symbols, code_files)
 
@@ -560,7 +582,7 @@ def display_symbols(
     rank_by: RankingByAttribute,
     ascending: bool = False,
     format: Literal["pandas", "rich"] = "rich",
-    exclude: Optional[Sequence[str]] = (
+    exclude: Sequence[str] | None = (
         "docstring",
         "code",
         "lineno",
@@ -568,7 +590,7 @@ def display_symbols(
         "filename",
         "filepath",
     ),
-    length: Optional[int] = 10,
+    length: int | None = 10,
 ):
     exclude = exclude or []
     valid_formats = ["pandas", "rich"]
@@ -580,11 +602,13 @@ def display_symbols(
 
     if rank_by not in rankable_attributes:
         raise ValueError(
-            f"Invalid rank_by attribute {rank_by}. Must be one of {rankable_attributes}"
+            f"Invalid rank_by attribute {rank_by}. Must be one of {rankable_attributes}",
         )
 
     sorted_symbols = sorted(
-        rankable_symbols, key=lambda x: getattr(x, rank_by), reverse=not ascending
+        rankable_symbols,
+        key=lambda x: getattr(x, rank_by),
+        reverse=not ascending,
     )
 
     if length:

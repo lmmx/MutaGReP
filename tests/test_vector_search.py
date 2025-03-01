@@ -1,12 +1,13 @@
+from pathlib import Path
+
+from pydantic import BaseModel
+
 from mutagrep.vector_search import (
-    QDrantVectorDatabase,
-    PydanticQdrantVectorDatabase,
     Embeddable,
     PydanticLancedbVectorDatabase,
+    PydanticQdrantVectorDatabase,
+    QDrantVectorDatabase,
 )
-from pydantic import BaseModel
-from pathlib import Path
-import lancedb
 
 
 class Animal(BaseModel):

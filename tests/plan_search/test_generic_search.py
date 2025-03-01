@@ -1,21 +1,22 @@
+from collections import defaultdict
+from collections.abc import Sequence
+from typing import cast
+
+from mutagrep.plan_search.containers import (
+    DequeSearchContainer,
+    PriorityQueueSearchContainer,
+    StackSearchContainer,
+)
+from mutagrep.plan_search.domain_models import (
+    GoalTestT,
+    Node,
+    Plan,
+    PlanStepT,
+)
 from mutagrep.plan_search.generic_search import (
     PlanSearcher,
     SearchState,
 )
-from mutagrep.plan_search.domain_models import (
-    Node,
-    Plan,
-    PlanStepT,
-    GoalTestT,
-)
-from typing import Sequence, cast
-
-from mutagrep.plan_search.containers import (
-    DequeSearchContainer,
-    StackSearchContainer,
-    PriorityQueueSearchContainer,
-)
-from collections import defaultdict
 
 
 class StubGoalTest:
@@ -25,7 +26,8 @@ class StubGoalTest:
 
 class StubSuccessorFunction:
     def __call__(
-        self, state: Node[PlanStepT, GoalTestT]
+        self,
+        state: Node[PlanStepT, GoalTestT],
     ) -> Sequence[Node[PlanStepT, GoalTestT]]:
         return []
 
@@ -35,7 +37,8 @@ class FanOutNSuccessorFunction:
         self.n = n
 
     def __call__(
-        self, state: Node[PlanStepT, GoalTestT]
+        self,
+        state: Node[PlanStepT, GoalTestT],
     ) -> Sequence[Node[PlanStepT, GoalTestT]]:
         level = state.level + 1
         return [
@@ -156,8 +159,7 @@ def test_dfs_planner_finds_goal_at_level():
 
 
 def test_dfs_planner_expends_budget_within_beam_depth_with_beam_width_gt_1():
-    """
-    BFS and DFS behave differently when the beam width is > 1.
+    """BFS and DFS behave differently when the beam width is > 1.
     With DFS, if the beam width is > 1 and a budget (max nodes to expand) is set,
     the budget will be spent entirely making one beam deeper.
     To ensure _search_ actually happens, we need to set a maximum beam depth.

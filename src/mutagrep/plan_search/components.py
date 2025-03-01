@@ -1,6 +1,11 @@
 import re
-from typing import (Any, Callable, Generic, Iterable, Literal, Optional,
-                    Sequence, cast)
+from collections.abc import Callable, Iterable, Sequence
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    cast,
+)
 
 import instructor
 import jinja2
@@ -12,12 +17,18 @@ from typing_extensions import Self
 from mutagrep.coderec.v3.symbol_mining import Symbol
 from mutagrep.plan_search.domain_models import Node
 
-from .domain_models import (CodeSearchTool, CodeSearchToolOutput,
-                            GoalTestFunction, GoalTestT,
-                            HasBeenVisitedFunction, Node, Plan, PlanStepT,
-                            SuccessorFunction)
+from .domain_models import (
+    CodeSearchTool,
+    CodeSearchToolOutput,
+    GoalTestFunction,
+    GoalTestT,
+    HasBeenVisitedFunction,
+    # Node,
+    Plan,
+    PlanStepT,
+    SuccessorFunction,
+)
 from .mnms_benchmark import MnmsPlanStep
-from .mnms_search_tool import MnmsSimpleCodeSearchTool
 from .typing_utils import implements
 
 
@@ -35,14 +46,14 @@ class PlanStep(BaseModel):
 
 
 def extract_symbols_used_from_plan(
-    plan: Plan[PlanStep, GoalTestT]
+    plan: Plan[PlanStep, GoalTestT],
 ) -> dict[str, Symbol]:
     all_symbols_used: dict[str, Symbol] = dict()
     for step in plan.steps:
         if step.search_result.instrumentation is None:
             raise ValueError(
                 "extract_symbols_used_from_plan relies on using the instrumentation "
-                "object to get the symbols considered. But it was none."
+                "object to get the symbols considered. But it was none.",
             )
         for retrieved_symbol in step.search_result.instrumentation.symbols_considered:
             all_symbols_used[retrieved_symbol.symbol.full_path] = (
@@ -52,7 +63,7 @@ def extract_symbols_used_from_plan(
 
 
 def extract_symbols_used_from_node(
-    node: Node[PlanStep, GoalTestT]
+    node: Node[PlanStep, GoalTestT],
 ) -> dict[str, Symbol]:
     return extract_symbols_used_from_plan(node.plan)
 
@@ -84,7 +95,7 @@ class LlmPlan(BaseModel):
     def check_cannot_remove_last_step_when_empty(self) -> Self:
         if self.edit_type == "remove_last_step" and len(self.steps) == 0:
             raise ValueError(
-                "'steps' cannot be empty when edit_type is 'remove_last_step'"
+                "'steps' cannot be empty when edit_type is 'remove_last_step'",
             )
         return self
 
@@ -104,7 +115,8 @@ class SuccessorFunctionFollowHumanWrittenPlan:
         self.step_index = 0
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         # If we've already used all steps in the plan, return empty list
         current_step_index = self.step_index
@@ -127,7 +139,8 @@ class SuccessorFunctionFollowHumanWrittenPlan:
         # Create new plan with all existing steps plus the new one
         plan_steps = list(state.plan.steps) + [new_step]
         edited_plan = Plan[PlanStep, GoalTestT](
-            user_query=state.plan.user_query, steps=plan_steps
+            user_query=state.plan.user_query,
+            steps=plan_steps,
         )
 
         # Create and return new node
@@ -139,16 +152,16 @@ class SuccessorFunctionFollowHumanWrittenPlan:
 class BaseSuccessorFunctionInvocationLog(BaseModel, Generic[PlanStepT, GoalTestT]):
     state: Node[PlanStepT, GoalTestT]
     successors: list[Node[PlanStepT, GoalTestT]]
-    client_kwargs: Optional[dict] = None
-    completion_response: Optional[ChatCompletion] = None
+    client_kwargs: dict | None = None
+    completion_response: ChatCompletion | None = None
 
 
 class SuccessorFunctionAddOrRemoveLastStep:
     def __init__(
         self,
         search_tool: CodeSearchTool,
-        fix_beam_width_to: Optional[int] = None,
-        log_sink: Optional[Callable[[BaseSuccessorFunctionInvocationLog], None]] = None,
+        fix_beam_width_to: int | None = None,
+        log_sink: Callable[[BaseSuccessorFunctionInvocationLog], None] | None = None,
     ) -> None:
         self.client = instructor.from_openai(OpenAI())
         self.search_tool = search_tool
@@ -166,13 +179,15 @@ class SuccessorFunctionAddOrRemoveLastStep:
         self.client_hook_captures["completion:kwargs"] = kwargs
 
     def hook_client_completion_response(
-        self, completion_response: dict[str, str]
+        self,
+        completion_response: dict[str, str],
     ) -> None:
         self.client_hook_captures["completion:response"] = completion_response
 
     @staticmethod
     def prepare_prompt(
-        state: Node[PlanStep, GoalTestT], fix_beam_width_to: Optional[int]
+        state: Node[PlanStep, GoalTestT],
+        fix_beam_width_to: int | None,
     ) -> str:
         template = jinja2.Template(
             """# Task
@@ -217,7 +232,7 @@ The plan is currently empty. You will need to add an initial step.
 # Instructions
 Propose new plans that are edited from the current plan.
 {% if fix_beam_width_to %}
-You must propose exactly {{ fix_beam_width_to }} plans. 
+You must propose exactly {{ fix_beam_width_to }} plans.
 Each plan must be different from the others.
 {% else %}
 You can propose any number of plans.
@@ -244,7 +259,8 @@ You must state whether you are removing the last step or adding a new step.
         return template.render(state=state, fix_beam_width_to=fix_beam_width_to)
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state, self.fix_beam_width_to)
         response = self.client.chat.completions.create(
@@ -270,7 +286,7 @@ You must state whether you are removing the last step or adding a new step.
                         index=proposed_step_raw.index,
                         content=proposed_step_raw.content,
                         search_result=search_result,
-                    )
+                    ),
                 ]
                 existing_plan_steps = list(state.plan.steps)
                 plan_steps = existing_plan_steps + proposed_steps
@@ -278,7 +294,8 @@ You must state whether you are removing the last step or adding a new step.
                 raise ValueError(f"Invalid edit type: {llm_plan.edit_type}")
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)
@@ -301,8 +318,8 @@ class SuccessorFunctionAddOrRemoveLastStepTextOnly:
     def __init__(
         self,
         search_tool: CodeSearchTool,
-        fix_beam_width_to: Optional[int] = None,
-        log_sink: Optional[Callable[[BaseSuccessorFunctionInvocationLog], None]] = None,
+        fix_beam_width_to: int | None = None,
+        log_sink: Callable[[BaseSuccessorFunctionInvocationLog], None] | None = None,
     ) -> None:
         self.client = OpenAI()
         self.search_tool = search_tool
@@ -310,10 +327,12 @@ class SuccessorFunctionAddOrRemoveLastStepTextOnly:
         self.log_sink = log_sink
         self.plan_edit_pattern = re.compile(r"^# Plan Edit \d+$", re.MULTILINE)
         self.remove_step_pattern = re.compile(
-            r"^## Edit Type\nRemove last step\.$", re.MULTILINE
+            r"^## Edit Type\nRemove last step\.$",
+            re.MULTILINE,
         )
         self.add_step_pattern = re.compile(
-            r"^## Edit Type\nAdd new step: (\d+)\. (.+)$", re.MULTILINE
+            r"^## Edit Type\nAdd new step: (\d+)\. (.+)$",
+            re.MULTILINE,
         )
 
     def log(self, invocation_log: BaseSuccessorFunctionInvocationLog) -> None:
@@ -322,7 +341,8 @@ class SuccessorFunctionAddOrRemoveLastStepTextOnly:
 
     @staticmethod
     def prepare_prompt(
-        state: Node[PlanStep, GoalTestT], fix_beam_width_to: Optional[int]
+        state: Node[PlanStep, GoalTestT],
+        fix_beam_width_to: int | None,
     ) -> str:
         template = jinja2.Template(
             """# Task
@@ -367,7 +387,7 @@ The plan is currently empty. You will need to add an initial step.
 # Instructions
 Propose new plans that are edited from the current plan.
 {% if fix_beam_width_to %}
-You must propose exactly {{ fix_beam_width_to }} plans. 
+You must propose exactly {{ fix_beam_width_to }} plans.
 Each plan must be different from the others.
 {% else %}
 You can propose any number of plans.
@@ -415,14 +435,15 @@ It is critical you stick to this format exactly, and do not output anything else
                             "edit_type": "add_new_step",
                             "step_number": int(match.group(1)),
                             "step_content": match.group(2),
-                        }
+                        },
                     )
                 else:
                     raise ValueError(f"Invalid plan edit: {plan}")
         return plans
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state, self.fix_beam_width_to)
         client_kwargs = {
@@ -454,7 +475,8 @@ It is critical you stick to this format exactly, and do not output anything else
                 raise ValueError(f"Invalid edit type: {plan_edit['edit_type']}")
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)
@@ -602,7 +624,8 @@ The edit_type must always be "add_new_step".
         return template.render(state=state)
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state)
         response = self.client.chat.completions.create(
@@ -630,7 +653,8 @@ The edit_type must always be "add_new_step".
             plan_steps = existing_plan_steps + [proposed_step]
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)
@@ -642,8 +666,7 @@ implements(SuccessorFunction[PlanStep])(SuccessorFunctionMonotonicAddStep)
 
 
 class AlwaysReturnsVisitedFalse(Generic[PlanStepT, GoalTestT]):
-    """
-    A stub implementation of the HasBeenVisitedFunction protocol that always
+    """A stub implementation of the HasBeenVisitedFunction protocol that always
     claims that a state has not been visited.
     """
 
@@ -656,13 +679,12 @@ class AlwaysReturnsVisitedFalse(Generic[PlanStepT, GoalTestT]):
 
 
 implements(HasBeenVisitedFunction[PlanStep, GoalTest])(
-    AlwaysReturnsVisitedFalse[PlanStep, GoalTest]
+    AlwaysReturnsVisitedFalse[PlanStep, GoalTest],
 )
 
 
 class AlwaysReturnsGoalTestTrue(Generic[PlanStepT]):
-    """
-    A stub implementation of the GoalTestFunction protocol that always claims
+    """A stub implementation of the GoalTestFunction protocol that always claims
     that the plan satisfies the user request.
     """
 
@@ -674,8 +696,7 @@ implements(GoalTestFunction[PlanStep, GoalTest])(AlwaysReturnsGoalTestTrue[PlanS
 
 
 class AlwaysReturnsGoalTestFalse(Generic[PlanStepT]):
-    """
-    A stub implementation of the GoalTestFunction protocol that always claims
+    """A stub implementation of the GoalTestFunction protocol that always claims
     that the plan does not satisfy the user request.
     """
 
@@ -687,13 +708,13 @@ implements(GoalTestFunction[PlanStep, GoalTest])(AlwaysReturnsGoalTestFalse[Plan
 
 
 class EmptySetSuccessorFunction(Generic[PlanStepT]):
-    """
-    A stub implementation of the SuccessorFunction protocol that returns an empty
+    """A stub implementation of the SuccessorFunction protocol that returns an empty
     list of successors.
     """
 
     def __call__(
-        self, state: Node[PlanStepT, GoalTestT]
+        self,
+        state: Node[PlanStepT, GoalTestT],
     ) -> Sequence[Node[PlanStepT, GoalTestT]]:
         return []
 

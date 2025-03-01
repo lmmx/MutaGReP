@@ -61,7 +61,7 @@ def make_prompt(plan: Plan[PlanStep, GoalTestT]) -> str:
         if step.search_result.instrumentation is None:
             raise ValueError(
                 "Likert LLM judge relies on using the instrumentation object "
-                "to get the symbols considered. But it was none."
+                "to get the symbols considered. But it was none.",
             )
         for retrieved_symbol in step.search_result.instrumentation.symbols_considered:
             all_symbols_used[retrieved_symbol.symbol.full_path] = (
@@ -94,11 +94,12 @@ class JudgeResponse(BaseModel):
 class LikertLlmJudge(Generic[GoalTestT]):
     def __init__(self):
         self.client = instructor.from_openai(
-            OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+            OpenAI(api_key=os.environ["OPENAI_API_KEY"]),
         )
 
     @retry(
-        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
     )
     def __call__(self, state: Node[PlanStep, GoalTestT]) -> float:
         prompt = make_prompt(state.plan)

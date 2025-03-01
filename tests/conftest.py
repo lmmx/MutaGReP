@@ -1,11 +1,8 @@
 import os
 from unittest.mock import MagicMock
-from omegaconf import DictConfig, OmegaConf
-from typing import cast
 
 import hydra
 import pytest
-
 
 TEST_ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,6 +24,5 @@ def mock_openai_client_factory():
 
 @pytest.fixture(autouse=True, scope="function")
 def reinitialize_hydra():
-
     yield
     hydra.core.global_hydra.GlobalHydra.instance().clear()  # type: ignore

@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from enum import Enum
-from typing import Sequence
 
 import jinja2
 from openai import OpenAI
@@ -8,8 +8,11 @@ from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 
 from mutagrep.plan_search.components import GoalTestT, Node, PlanStep
-from mutagrep.plan_search.domain_models import (CodeSearchTool, Plan,
-                                                SuccessorFunction)
+from mutagrep.plan_search.domain_models import (
+    CodeSearchTool,
+    Plan,
+    SuccessorFunction,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 
@@ -134,7 +137,9 @@ class ParsedPlanModification(BaseModel):
 
 class XmlOutputSuccessorFunction:
     def __init__(
-        self, allowed_actions: Sequence[AllowedEdit], search_tool: CodeSearchTool
+        self,
+        allowed_actions: Sequence[AllowedEdit],
+        search_tool: CodeSearchTool,
     ) -> None:
         self.allowed_actions = allowed_actions
         self.client = OpenAI()
@@ -149,7 +154,8 @@ class XmlOutputSuccessorFunction:
         )
 
     def parse_modifications_from_response(
-        self, response: ChatCompletion
+        self,
+        response: ChatCompletion,
     ) -> list[ParsedPlanModification]:
         # Parse the XML-like response content
         root = ET.fromstring(response.choices[0].message.content)  # type: ignore
@@ -164,14 +170,16 @@ class XmlOutputSuccessorFunction:
             description = edit.find("step/description").text  # type: ignore
 
             modification = ParsedPlanModification(
-                step_number=step_number, description=description  # type: ignore
+                step_number=step_number,
+                description=description,  # type: ignore
             )
             modifications.append(modification)
 
         return modifications
 
     def __call__(
-        self, state: Node[PlanStep, GoalTestT]
+        self,
+        state: Node[PlanStep, GoalTestT],
     ) -> Sequence[Node[PlanStep, GoalTestT]]:
         prompt = self.prepare_prompt(state)
         response = self.client.chat.completions.create(
@@ -194,13 +202,14 @@ class XmlOutputSuccessorFunction:
                     index=len(state.plan.steps),
                     content=proposed_step_raw,
                     search_result=search_result,
-                )
+                ),
             ]
             existing_plan_steps = list(state.plan.steps)
             plan_steps = existing_plan_steps + proposed_steps
 
             edited_plan = Plan[PlanStep, GoalTestT](
-                user_query=state.plan.user_query, steps=plan_steps
+                user_query=state.plan.user_query,
+                steps=plan_steps,
             )
             new_node = Node(plan=edited_plan, parent=state, level=state.level + 1)
             new_nodes.append(new_node)

@@ -1,4 +1,5 @@
-from typing import Iterable, Literal, Optional, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Literal
 
 import instructor
 import jinja2
@@ -7,12 +8,13 @@ from loguru import logger
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from mutagrep.coderec.v3.symbol_mining import Symbol
-from mutagrep.plan_search.domain_models import (CodeSearchInstrumentation,
-                                                CodeSearchTool,
-                                                CodeSearchToolOutput,
-                                                RetrievedSymbol,
-                                                SymbolRetriever)
+from mutagrep.plan_search.domain_models import (
+    CodeSearchInstrumentation,
+    CodeSearchTool,
+    CodeSearchToolOutput,
+    RetrievedSymbol,
+    SymbolRetriever,
+)
 from mutagrep.plan_search.typing_utils import implements
 
 GENERATE_KEYWORDS_TEMPLATE = jinja2.Template(
@@ -22,7 +24,7 @@ GENERATE_KEYWORDS_TEMPLATE = jinja2.Template(
     You will be given a goal expressed in natural language.
     Look at the goal and think about what keywords would be useful to find the Python symbols that are relevant to the goal.
     The keywords will be used to search for Python symbols in a repository.
-    
+
     You do not need to list variants of the keywords. For example, if you think of the keyword "plot", you do not also need to include "plots" or "plotting".
     List as many keywords as you can that are relevant to the goal, but do not repeat keywords or list unnecessary keywords.
 
@@ -55,7 +57,7 @@ FILTER_SYMBOLS_TEMPLATE = jinja2.Template(
     # Keywords
     {{ keywords }}
 
-    # Goal 
+    # Goal
     {{ goal }}
 
     # Guidelines
@@ -70,8 +72,8 @@ FILTER_SYMBOLS_TEMPLATE = jinja2.Template(
 
 
 class FilterSymbolsResponseModel(BaseModel):
-    symbol_name: Optional[str]
-    justification: Optional[str]
+    symbol_name: str | None
+    justification: str | None
     satisfies_intention: bool
 
 
@@ -93,12 +95,15 @@ class OpenAiOneStepCodeSearchTool:
         self.model = model
 
     def cache_code_search_output(
-        self, intention: str, output: CodeSearchToolOutput
+        self,
+        intention: str,
+        output: CodeSearchToolOutput,
     ) -> None:
         self.cache[intention] = output
 
     def get_cached_code_search_output(
-        self, intention: str
+        self,
+        intention: str,
     ) -> CodeSearchToolOutput | None:
         return self.cache.get(intention)
 
@@ -113,9 +118,10 @@ class OpenAiOneStepCodeSearchTool:
                 {
                     "role": "user",
                     "content": GENERATE_KEYWORDS_TEMPLATE.render(
-                        goal=goal, repo_description=self.repo_description
+                        goal=goal,
+                        repo_description=self.repo_description,
                     ),
-                }
+                },
             ],
             response_model=Iterable[str],  # type: ignore
         )
@@ -134,11 +140,15 @@ class OpenAiOneStepCodeSearchTool:
         goal: str,
     ) -> CodeSearchToolOutput:
         retrieved_symbols = sorted(
-            retrieved_symbols, key=lambda x: x.score or 0, reverse=True
+            retrieved_symbols,
+            key=lambda x: x.score or 0,
+            reverse=True,
         )
         symbols = [rs.symbol for rs in retrieved_symbols]
         prompt = FILTER_SYMBOLS_TEMPLATE.render(
-            symbols=symbols, keywords=keywords, goal=goal
+            symbols=symbols,
+            keywords=keywords,
+            goal=goal,
         )
         response, completion = self.client.chat.completions.create_with_completion(
             model=self.model,
@@ -146,7 +156,7 @@ class OpenAiOneStepCodeSearchTool:
                 {
                     "role": "user",
                     "content": prompt,
-                }
+                },
             ],
             response_model=FilterSymbolsResponseModel,
         )
@@ -169,15 +179,17 @@ class OpenAiOneStepCodeSearchTool:
         return code_search_output
 
     def retrieve_symbols_with_keywords(
-        self, keywords: list[str]
+        self,
+        keywords: list[str],
     ) -> Sequence[RetrievedSymbol]:
         try:
             symbols = self.retriever(
-                queries=keywords, n_results=self.results_per_keyword
+                queries=keywords,
+                n_results=self.results_per_keyword,
             )
         except Exception:  # noqa: E722
             logger.opt(exception=True).error(
-                f"Error retrieving symbols with keywords {keywords}"
+                f"Error retrieving symbols with keywords {keywords}",
             )
             return []
 
@@ -185,7 +197,8 @@ class OpenAiOneStepCodeSearchTool:
         return symbols
 
     def get_unique_symbols(
-        self, retrieved_symbols: Sequence[RetrievedSymbol]
+        self,
+        retrieved_symbols: Sequence[RetrievedSymbol],
     ) -> Sequence[RetrievedSymbol]:
         unique_symbols = []
         seen_symbols = set()

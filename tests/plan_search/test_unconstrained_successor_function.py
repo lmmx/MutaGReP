@@ -1,17 +1,18 @@
-from mutagrep.plan_search.successor_functions.xml_like_sampling_unconstrained import (
-    UnconstrainedXmlOutputSuccessorFunction,
-)
-from mutagrep.plan_search.domain_models import (
-    Node,
-    Plan,
-    CodeSearchToolOutput,
-    CodeSearchInstrumentation,
-)
-from mutagrep.plan_search.components import PlanStep
-from mutagrep.plan_search.mnms_search_tool import build_retriever_for_mnms
 import rich
+
 from mutagrep.plan_search.code_search_tools.direct_intent_search import (
     DirectIntentSearchTool,
+)
+from mutagrep.plan_search.components import PlanStep
+from mutagrep.plan_search.domain_models import (
+    CodeSearchInstrumentation,
+    CodeSearchToolOutput,
+    Node,
+    Plan,
+)
+from mutagrep.plan_search.mnms_search_tool import build_retriever_for_mnms
+from mutagrep.plan_search.successor_functions.xml_like_sampling_unconstrained import (
+    UnconstrainedXmlOutputSuccessorFunction,
 )
 
 
@@ -45,7 +46,7 @@ def test_when_non_empty_plan() -> None:
                         justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         instrumentation=CodeSearchInstrumentation(
                             symbols_considered=list(
-                                retriever(["Analyze the sentiment of the letter."])
+                                retriever(["Analyze the sentiment of the letter."]),
                             ),
                             completion_tokens=100,
                             prompt_tokens=100,
@@ -53,9 +54,9 @@ def test_when_non_empty_plan() -> None:
                         ),
                     ),
                     index=0,
-                )
+                ),
             ],
-        )
+        ),
     )
     successors = successor_fn(root)
     rich.print(successors)
@@ -88,7 +89,7 @@ def test_when_empty_plan() -> None:
         plan=Plan(
             user_query="I need to analyze the sentiment of a letter sent to me, then create an image inspired by the sentiment.",
             steps=[],
-        )
+        ),
     )
     successors = successor_fn(root)
     rich.print(successors)
@@ -130,7 +131,7 @@ def test_sampling_multiple_successors() -> None:
                         justification="The function `text_classification` can be used to analyze the sentiment of the letter.",
                         instrumentation=CodeSearchInstrumentation(
                             symbols_considered=list(
-                                retriever(["Analyze the sentiment of the letter."])
+                                retriever(["Analyze the sentiment of the letter."]),
                             ),
                             completion_tokens=100,
                             prompt_tokens=100,
@@ -138,9 +139,9 @@ def test_sampling_multiple_successors() -> None:
                         ),
                     ),
                     index=0,
-                )
+                ),
             ],
-        )
+        ),
     )
     successors = successor_fn(root)
     rich.print(successors)
